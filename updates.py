@@ -28,8 +28,13 @@ def beta_H(X, W, H, beta):
     H : Theano tensor
         Updated version of the activations
     """
-    return H*((T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), W)) /
-              (T.dot(T.power(T.dot(H, W.T), (beta-1)), W)))
+    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X), W)) /
+                               (T.sum(W, axis=0)),
+                ifelse(T.eq(beta, 2), (T.dot(X, W)) /
+                                      (T.dot(T.dot(H, W.T), W)),
+                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), W)) /
+                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W))))
+    return T.mul(H, up)
 
 
 def beta_W(X, W, H, beta):
@@ -50,9 +55,107 @@ def beta_W(X, W, H, beta):
     W : Theano tensor
         Updated version of the bases
     """
-    return W*((T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, H)) /
-              (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, H)))
+    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X).T, H)) /
+                               (T.sum(H, axis=0)),
+                ifelse(T.eq(beta, 2), (T.dot(X.T, H)) /
+                                      (T.dot(T.dot(H, W.T).T, H)),
+                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, H)) /
+                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, H))))
+    return T.mul(W, up)
 
+
+def H_beta_sub(X, W, Wsub, H, Hsub, beta):
+    """Update group activation with beta divergence
+
+    Parameters
+    ----------
+    X : Theano tensor
+        data
+    W : Theano tensor
+        Bases
+    Wsub : Theano tensor
+        group Bases        
+    H : Theano tensor
+        activation matrix
+    Hsub : Theano tensor
+        group activation matrix
+    beta : Theano scalar
+
+    Returns
+    -------
+    H : Theano tensor
+        Updated version of the activations
+    """
+    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X), Wsub)) /
+                               (T.sum(Wsub, axis=0)),
+                ifelse(T.eq(beta, 2), (T.dot(X, Wsub)) /
+                                      (T.dot(T.dot(H, W.T), Wsub)),
+                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), Wsub)) /
+                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)), Wsub))))
+    return T.mul(Hsub, up)
+    
+def W_beta_sub(X, W, Wsub, H, Hsub, beta):
+    """Update group activation with beta divergence
+
+    Parameters
+    ----------
+    X : Theano tensor
+        data
+    W : Theano tensor
+        Bases
+    Wsub : Theano tensor
+        group Bases        
+    H : Theano tensor
+        activation matrix
+    Hsub : Theano tensor
+        group activation matrix
+    beta : Theano scalar
+
+    Returns
+    -------
+    H : Theano tensor
+        Updated version of the activations
+    """
+    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X).T, Hsub)) /
+                               (T.sum(Hsub, axis=0)),
+                ifelse(T.eq(beta, 2), (T.dot(X.T, Hsub)) /
+                                      (T.dot(T.dot(H, W.T).T, Hsub)),
+                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)) /
+                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub))))
+    return T.mul(Wsub, up)
+    
+def W_beta_sub_withcst(X, W, Wsub, H, Hsub, beta, sum_grp, lambda_grp, card_grp):
+    """Update group activation with beta divergence
+
+    Parameters
+    ----------
+    X : Theano tensor
+        data
+    W : Theano tensor
+        Bases
+    Wsub : Theano tensor
+        group Bases        
+    H : Theano tensor
+        activation matrix
+    Hsub : Theano tensor
+        group activation matrix
+    beta : Theano scalar
+
+    Returns
+    -------
+    H : Theano tensor
+        Updated version of the activations
+    """
+    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X).T, Hsub) +
+                                lambda_grp * sum_grp) /
+                               (T.sum(Hsub, axis=0) + lambda_grp * card_grp * Wsub),
+                ifelse(T.eq(beta, 2), (T.dot(X.T, Hsub) + lambda_grp * sum_grp) /
+                                      (T.dot(T.dot(H, W.T).T, Hsub) + lambda_grp * card_grp * Wsub),
+                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)+
+                                       lambda_grp * sum_grp) /
+                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub) +
+                                       lambda_grp * card_grp * Wsub)))
+    return T.mul(Wsub, up)
 
 def group_H(X, W, H, beta, params):
     """Group udpate for the activation with beta divergence
@@ -81,27 +184,9 @@ def group_H(X, W, H, beta, params):
     k_ses = params[1][1]
     start = params[0][3]
     stop = params[0][4]
-    up_cls = H[start:stop, 0:k_cls]*((T.dot(T.mul(T.power(T.dot(H[start:stop, :], W.T),
-                                                          (beta - 2)),
-                                                  X),
-                                            W[:, 0:k_cls])) /
-                                     (T.dot(T.power(T.dot(H[start:stop, :], W.T),
-                                                    (beta-1)),
-                                            W[:, 0:k_cls])))
-    up_ses = H[start:stop, k_cls:k_ses+k_cls]*((T.dot(T.mul(T.power(T.dot(H[start:stop, :], W.T),
-                                                                    (beta - 2)),
-                                                            X),
-                                                      W[:, k_cls:k_ses+k_cls])) /
-                                               (T.dot(T.power(T.dot(H[start:stop, :], W.T),
-                                                              (beta-1)),
-                                                      W[:, k_cls:k_ses+k_cls])))
-    up_res = H[start:stop, k_ses+k_cls:]*((T.dot(T.mul(T.power(T.dot(H[start:stop, :], W.T),
-                                                               (beta - 2)),
-                                                       X),
-                                                 W[:, k_ses+k_cls:])) /
-                                          (T.dot(T.power(T.dot(H[start:stop, :], W.T),
-                                                         (beta-1)),
-                                                 W[:, k_ses+k_cls:])))
+    up_cls = H_beta_sub(X, W, W[:, 0:k_cls], H[start:stop, :], H[start:stop, 0:k_cls], beta)
+    up_ses = H_beta_sub(X, W, W[:, k_cls:k_ses+k_cls], H[start:stop, :], H[start:stop, k_cls:k_ses+k_cls], beta)
+    up_res = H_beta_sub(X, W, W[:, k_ses+k_cls:], H[start:stop, :], H[start:stop, k_ses+k_cls:], beta)
     return T.concatenate((up_cls, up_ses, up_res), axis=1)
 
 
