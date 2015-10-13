@@ -28,12 +28,9 @@ def beta_H(X, W, H, beta):
     H : Theano tensor
         Updated version of the activations
     """
-    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X), W)) /
-                               (T.sum(W, axis=0)),
-                ifelse(T.eq(beta, 2), (T.dot(X, W)) /
-                                      (T.dot(T.dot(H, W.T), W)),
-                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), W)) /
-                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W))))
+    up = ifelse(T.eq(beta, 2), (T.dot(X, W)) / (T.dot(T.dot(H, W.T), W)),
+                               (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), W)) /
+                               (T.dot(T.power(T.dot(H, W.T), (beta-1)), W)))
     return T.mul(H, up)
 
 
@@ -55,12 +52,9 @@ def beta_W(X, W, H, beta):
     W : Theano tensor
         Updated version of the bases
     """
-    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X).T, H)) /
-                               (T.sum(H, axis=0)),
-                ifelse(T.eq(beta, 2), (T.dot(X.T, H)) /
-                                      (T.dot(T.dot(H, W.T).T, H)),
-                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, H)) /
-                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, H))))
+    up = ifelse(T.eq(beta, 2), (T.dot(X.T, H)) / (T.dot(T.dot(H, W.T).T, H)),
+                               (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, H)) /
+                               (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, H)))
     return T.mul(W, up)
 
 
@@ -86,12 +80,9 @@ def H_beta_sub(X, W, Wsub, H, Hsub, beta):
     H : Theano tensor
         Updated version of the activations
     """
-    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X), Wsub)) /
-                               (T.sum(Wsub, axis=0)),
-                ifelse(T.eq(beta, 2), (T.dot(X, Wsub)) /
-                                      (T.dot(T.dot(H, W.T), Wsub)),
-                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), Wsub)) /
-                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)), Wsub))))
+    up = ifelse(T.eq(beta, 2), (T.dot(X, Wsub)) / (T.dot(T.dot(H, W.T), Wsub)),
+                (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), Wsub)) /
+                (T.dot(T.power(T.dot(H, W.T), (beta-1)), Wsub)))
     return T.mul(Hsub, up)
     
 def W_beta_sub(X, W, Wsub, H, Hsub, beta):
@@ -116,12 +107,9 @@ def W_beta_sub(X, W, Wsub, H, Hsub, beta):
     H : Theano tensor
         Updated version of the activations
     """
-    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X).T, Hsub)) /
-                               (T.sum(Hsub, axis=0)),
-                ifelse(T.eq(beta, 2), (T.dot(X.T, Hsub)) /
-                                      (T.dot(T.dot(H, W.T).T, Hsub)),
-                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)) /
-                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub))))
+    up = ifelse(T.eq(beta, 2), (T.dot(X.T, Hsub)) / (T.dot(T.dot(H, W.T).T, Hsub)),
+                (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)) /
+                (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub)))
     return T.mul(Wsub, up)
     
 def W_beta_sub_withcst(X, W, Wsub, H, Hsub, beta, sum_grp, lambda_grp, card_grp):
@@ -146,15 +134,12 @@ def W_beta_sub_withcst(X, W, Wsub, H, Hsub, beta, sum_grp, lambda_grp, card_grp)
     H : Theano tensor
         Updated version of the activations
     """
-    up = ifelse(T.eq(beta, 1), (T.dot(T.mul(T.power(T.dot(H, W.T), (-1)), X).T, Hsub) +
-                                lambda_grp * sum_grp) /
-                               (T.sum(Hsub, axis=0) + lambda_grp * card_grp * Wsub),
-                ifelse(T.eq(beta, 2), (T.dot(X.T, Hsub) + lambda_grp * sum_grp) /
-                                      (T.dot(T.dot(H, W.T).T, Hsub) + lambda_grp * card_grp * Wsub),
-                                      (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)+
-                                       lambda_grp * sum_grp) /
-                                      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub) +
-                                       lambda_grp * card_grp * Wsub)))
+    up = ifelse(T.eq(beta, 2), (T.dot(X.T, Hsub) + lambda_grp * sum_grp) /
+                               (T.dot(T.dot(H, W.T).T, Hsub) + lambda_grp * card_grp * Wsub),
+                (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)+
+                 lambda_grp * sum_grp) /
+                (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub) +
+                 lambda_grp * card_grp * Wsub)))
     return T.mul(Wsub, up)
 
 def group_H(X, W, H, beta, params):
