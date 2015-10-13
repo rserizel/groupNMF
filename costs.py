@@ -11,16 +11,18 @@ import theano
 
 def beta_div(X, W, H, beta):
     """Compute betat divergence"""
-    div = ifelse(T.eq(beta, 0),
-                 T.sum(X / T.dot(H, W) - T.log(X / T.dot(H, W)) - 1),
-                 ifelse(T.eq(beta, 1),
-                        T.sum(T.mul(X, (T.log(X) - T.log(T.dot(H, W)))) + T.dot(H, W) - X),
-                        T.sum(1. / (beta * (beta - 1.)) * (T.power(X, beta) +
-                                                           (beta - 1.) *
-                                                           T.power(T.dot(H, W), beta) -
-                                                           beta *
-                                                           T.power(T.mul(X, T.dot(H, W)),
-                                                                   (beta - 1))))))
+    div = ifelse(T.eq(beta, 2),
+                 T.sum(1. / 2 * T.power(X - T.dot(H, W), 2)), 
+                 ifelse(T.eq(beta, 0),
+                        T.sum(X / T.dot(H, W) - T.log(X / T.dot(H, W)) - 1),
+                        ifelse(T.eq(beta, 1),
+                               T.sum(T.mul(X, (T.log(X) - T.log(T.dot(H, W)))) + T.dot(H, W) - X),
+                                T.sum(1. / (beta * (beta - 1.)) * (T.power(X, beta) +
+                                                                   (beta - 1.) *
+                                                                   T.power(T.dot(H, W), beta) -
+                                                                   beta *
+                                                                   T.power(T.mul(X, T.dot(H, W)),
+                                                                           (beta - 1)))))))
     return div
 
 
