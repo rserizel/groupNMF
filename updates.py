@@ -139,7 +139,7 @@ def W_beta_sub_withcst(X, W, Wsub, H, Hsub, beta, sum_grp, lambda_grp, card_grp)
                 (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)+
                  lambda_grp * sum_grp) /
                 (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub) +
-                 lambda_grp * card_grp * Wsub)))
+                 lambda_grp * card_grp * Wsub))
     return T.mul(Wsub, up)
 
 def group_H(X, W, H, beta, params):
