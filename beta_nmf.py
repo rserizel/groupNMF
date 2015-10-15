@@ -106,7 +106,7 @@ class BetaNMF(object):
             if 1 not in self.fixed_factors:
                 self.train_w()
             if 0 not in self.fixed_factors:
-                self.train_w()
+                self.train_h()
             if self.verbose > 0:
                 if (it+1) % self.verbose == 0:
                     score = self.score()
