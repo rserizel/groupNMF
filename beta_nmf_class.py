@@ -52,7 +52,7 @@ class ClassBetaNMF(object):
          * beta=1 : Kullback Leibler
          * beta=0 : Itakura-Saito
 
-    NMF_updates : multiplicatives rule to update NMF (default beta-NMF)
+    NMF_updates : multiplicatives rule to update NMF 'beta' or 'groupNMF' (default beta-NMF)
         string
 
     n_iter : number of iterations
@@ -65,6 +65,10 @@ class ClassBetaNMF(object):
 
     normalize : normalize the column of W
         boolean
+        
+    dist_mode : 'segment' or 'iter'
+        * 'segment' the constraint distance is computed locally for each new segment
+        * 'iter' the constraint distances are computed once at the beginning of the iteration
 
 
     fixed_factors : list of factors that are not updated
@@ -81,6 +85,9 @@ class ClassBetaNMF(object):
 
     factors_: list of arrays (theano shared variables)
         The estimated factors
+        
+    cst_dist: list of arrays (theano shared variable)
+        Contains the class distances and the session distances 
 
     X_buff: buffer for the data (theano shared variable)
 
@@ -92,7 +99,8 @@ class ClassBetaNMF(object):
                  ses_label=np.asarray([0]), buff_size=BUFF_SIZE,
                  n_components=(K_CLS, K_SES, K_RES), beta=BETA,
                  NMF_updates='beta', n_iter=N_ITER, lambdas=[0, 0, 0],
-                 normalize=False, fixed_factors=None, verbose=0):
+                 normalize=False, fixed_factors=None, verbose=0,
+                 dist_mode='segment'):
         self.data_shape = data.shape
         self.buff_size = buff_size
         self.n_components = np.asarray(n_components, dtype='int32')
@@ -104,6 +112,9 @@ class ClassBetaNMF(object):
         self.NMF_updates = NMF_updates
         self.iters = {}
         self.scores = []
+        self.dist_mode=dist_mode
+        if fixed_factors==None:
+            fixed_factors = []
         self.fixed_factors = fixed_factors
         fact_ = np.asarray([base.nnrandn((self.data_shape[1],
                                           np.sum(self.n_components)))
@@ -119,7 +130,16 @@ class ClassBetaNMF(object):
         self.X_buff = theano.shared(np.zeros((self.buff_size,
                                               self.data_shape[1])).astype(theano.config.floatX),
                                     name="X_buff")
-
+        if self.dist_mode == 'iter':
+            self.cls_sums= theano.shared(np.zeros((np.max(cls_label)+1, self.data_shape[1], self.n_components[0])).astype(theano.config.floatX), 
+                                         name="cls_sums",
+                                         borrow=True, 
+                                         allow_downcast=True)
+            self.ses_sums= theano.shared(np.zeros((np.max(ses_label)+1, self.data_shape[1], self.n_components[1])).astype(theano.config.floatX), 
+                                         name="ses_sums",
+                                         borrow=True, 
+                                         allow_downcast=True)
+            self.get_sum_function()
         self.get_updates_functions()
         self.get_norm_function()
         self.get_div_function()
@@ -240,6 +260,16 @@ class ClassBetaNMF(object):
         self.scores.append(self.score_buffer(X, buff))
         print 'Fitting NMF model with %d iterations....' % self.n_iter
         for it in range(self.n_iter):
+            if self.dist_mode == 'iter':
+                for i in range(int(np.max(cls_label)+1)):
+                    Sci = np.hstack(np.where(self.iters['cls'][:,0] == i))
+                    if Sci.shape[0] > 0:
+                        self.class_sum(i, self.n_components, Sci)
+                for i in range(int(np.max(ses_label)+1)):  
+                    Csi = np.hstack(np.where(self.iters['cls'][:,1] == i))
+                    if Csi.shape[0] > 0:
+                        self.ses_sum(i, self.n_components, Csi)
+                    
             if self.verbose > 0:
                 if (it+1) % self.verbose == 0:
                     if 'tick' not in locals():
@@ -248,24 +278,24 @@ class ClassBetaNMF(object):
                                                                      self.n_iter)
             buff = self.generate_buffer_from_lbl(X, cls_label, ses_label,
                                                  random=True, truncate=True)
-            last_score = self.update_buffer(X, buff, it)
-            self.scores.append(last_score)
-            if self.NMF_updates == 'beta':
-                if last_score > 0:
-                    print 'Score: %.1f' % last_score
-            if self.NMF_updates == 'groupNMF':
-                if last_score[0][0] > 0:
-                    print 'Score: %.1f' % last_score[0][0]
-                    print 'Beta-divergence: %.1f' % last_score[0][1]
-                    print 'Class distance : %.1f (%.1f)' % (last_score[0][2]*self.lambdas[0],
-                                                            last_score[0][2])
-                    print 'Session distance : %.1f (%.1f)' % (last_score[0][3]*self.lambdas[1],
-                                                              last_score[0][3])
+            self.update_buffer(X, buff, it)
             if self.normalize:
                 self.normalize_W_H()
             if self.verbose > 0:
                 if (it+1) % self.verbose == 0:
-                    print 'Duration=%.1fms' % ((time.time() - tick) * 1000)
+                    self.scores.append(self.score_buffer(X, buff))
+                    if self.NMF_updates == 'beta':
+                        if self.scores[-1] > 0:
+                            print 'Score: %.1f' % self.score[-1]
+                    if self.NMF_updates == 'groupNMF':
+                        if self.scores[-1][0][0] > 0:
+                            print 'Score: %.1f' % self.scores[-1][0][0]
+                            print 'Beta-divergence: %.1f' % self.scores[-1][0][1]
+                            print 'Class distance : %.1f (%.1f)' % (self.scores[-1][0][2]*self.lambdas[0],
+                                                                    self.scores[-1][0][2])
+                            print 'Session distance : %.1f (%.1f)' % (self.scores[-1][0][3]*self.lambdas[1],
+                                                                      self.scores[-1][0][3])                    
+                            print 'Duration=%.1fms' % ((time.time() - tick) * 1000)
                     sys.stdout.flush()
         print 'Total duration=%.1fms' % ((time.time() - global_tick) * 1000)
 
@@ -390,6 +420,8 @@ class ClassBetaNMF(object):
                                        name="div",
                                        allow_input_downcast=True,
                                        on_unused_input='ignore')
+                                       
+
 
     def get_norm_function(self):
         tind = T.ivector('ind')
@@ -407,13 +439,33 @@ class ClassBetaNMF(object):
                                         name="norm_w_h",
                                         allow_input_downcast=True)
 
+    def get_sum_function(self): 
+        tind = T.iscalar('ind')
+        tcomp = T.ivector('comp')
+        tSC_ind = T.ivector('Sc')
+        tparams = [tcomp, tSC_ind]                                     
+        cls_sum = T.set_subtensor(self.cls_sums[tind],
+                                  costs.cls_sum(self.W, tparams))
+        self.class_sum = theano.function(inputs=[tind, tcomp, tSC_ind],
+                                          outputs=[],
+                                          updates={self.cls_sums: cls_sum},
+                                          name="class_sum",
+                                          allow_input_downcast=True,
+                                          on_unused_input='ignore')
+                                          
+        ses_sum = T.set_subtensor(self.ses_sums[tind],
+                                  costs.ses_sum(self.W, tparams))
+
+        self.ses_sum = theano.function(inputs=[tind, tcomp, tSC_ind],
+                                          outputs=[ses_sum],
+                                          updates={self.ses_sums: ses_sum},
+                                          name="ses_sum",
+                                          allow_input_downcast=True,
+                                          on_unused_input='ignore')
+                                         
+
     def get_updates_functions(self):
         tind = T.ivector('ind')
-        tcomp = T.ivector('comp')
-        tlambda = T.fvector('lambda')
-        tSc = T.ivector('Sc')
-        tCs = T.ivector('Cs')
-        tcard = T.bvector('card')
 
         if self.NMF_updates == 'beta':
             print "Standard rules for beta-divergence"
@@ -439,42 +491,87 @@ class ClassBetaNMF(object):
                                           allow_input_downcast=True)
 
         if self.NMF_updates == 'groupNMF':
-            tparams = [tind, tcomp, tlambda, tSc, tCs, tcard]
+            tcomp = T.ivector('comp')
+            tlambda = T.fvector('lambda')
+            tcard = T.bvector('card')
+
             print "Group NMF with class specific rules for beta-divergence"
-            H_update = T.set_subtensor(self.H[tind[3]:tind[4], ],
-                                       updates.group_H(self.X_buff[tind[1]:tind[2], ],
-                                                       self.W[tind[0]],
-                                                       self.H,
-                                                       self.beta,
-                                                       tparams))
-            W_update = T.set_subtensor(self.W[tind[0]],
-                                       updates.group_W(self.X_buff[tind[1]:tind[2], ],
-                                                       self.W,
-                                                       self.H[tind[3]:tind[4], ],
-                                                       self.beta,
-                                                       tparams))
-            self.trainH = theano.function(inputs=[tind,
-                                                  tcomp,
-                                                  tlambda,
-                                                  tSc,
-                                                  tCs,
-                                                  tcard],
-                                          outputs=[],
-                                          updates={self.H: H_update},
-                                          name="trainH",
-                                          on_unused_input='ignore',
-                                          allow_input_downcast=True)
-            self.trainW = theano.function(inputs=[tind,
-                                                  tcomp,
-                                                  tlambda,
-                                                  tSc,
-                                                  tCs,
-                                                  tcard],
-                                          outputs=[],
-                                          updates={self.W: W_update},
-                                          name="trainW",
-                                          on_unused_input='ignore',
-                                          allow_input_downcast=True)
+            if self.dist_mode=='iter':
+                tparams = [tind, tcomp, tlambda, tcard]
+                print "Compute contraint distances once per iteration" 
+                H_update = T.set_subtensor(self.H[tind[3]:tind[4], ],
+                                           updates.group_H(self.X_buff[tind[1]:tind[2], ],
+                                                           self.W[tind[0]],
+                                                           self.H,
+                                                           self.beta,
+                                                           tparams))
+                W_update = T.set_subtensor(self.W[tind[0]],
+                                           updates.group_W_nosum(self.X_buff[tind[1]:tind[2], ],
+                                                           self.W,
+                                                           self.H[tind[3]:tind[4], ],
+                                                           self.cls_sums[tind[5]],
+                                                           self.ses_sums[tind[6]],
+                                                           self.beta,
+                                                           tparams))
+                self.trainH = theano.function(inputs=[tind,
+                                                      tcomp,
+                                                      tlambda,
+                                                      tcard],
+                                              outputs=[],
+                                              updates={self.H: H_update},
+                                              name="trainH",
+                                              on_unused_input='ignore',
+                                              allow_input_downcast=True)
+                self.trainW = theano.function(inputs=[tind,
+                                                      tcomp,
+                                                      tlambda,
+                                                      tcard],
+                                              outputs=[],
+                                              updates={self.W: W_update},
+                                              name="trainW",
+                                              on_unused_input='ignore',
+                                              allow_input_downcast=True)
+
+            else:
+                print "Compute contraint distances at each segment update"  
+                tSc = T.ivector('Sc')
+                tCs = T.ivector('Cs')
+                tparams = [tind, tcomp, tlambda, tSc, tCs, tcard]                
+                H_update = T.set_subtensor(self.H[tind[3]:tind[4], ],
+                                           updates.group_H(self.X_buff[tind[1]:tind[2], ],
+                                                           self.W[tind[0]],
+                                                           self.H,
+                                                           self.beta,
+                                                           tparams))
+                W_update = T.set_subtensor(self.W[tind[0]],
+                                           updates.group_W(self.X_buff[tind[1]:tind[2], ],
+                                                           self.W,
+                                                           self.H[tind[3]:tind[4], ],
+                                                           self.beta,
+                                                           tparams))
+                self.trainH = theano.function(inputs=[tind,
+                                                      tcomp,
+                                                      tlambda,
+                                                      tSc,
+                                                      tCs,
+                                                      tcard],
+                                              outputs=[],
+                                              updates={self.H: H_update},
+                                              name="trainH",
+                                              on_unused_input='ignore',
+                                              allow_input_downcast=True)
+                self.trainW = theano.function(inputs=[tind,
+                                                      tcomp,
+                                                      tlambda,
+                                                      tSc,
+                                                      tCs,
+                                                      tcard],
+                                              outputs=[],
+                                              updates={self.W: W_update},
+                                              name="trainW",
+                                              on_unused_input='ignore',
+                                              allow_input_downcast=True)
+
 
     def normalize_W_H(self):
         for i in range(len(self.iters['cls'])):
@@ -623,26 +720,39 @@ class ClassBetaNMF(object):
             if 0 not in self.fixed_factors:
                 self.trainH(indices)
         if self.NMF_updates == 'groupNMF':
-            if 1 not in self.fixed_factors:
-                self.trainW(indices,
-                            self.n_components,
-                            self.lambdas,
-                            Sci,
-                            Csi,
-                            card)
-            if 0 not in self.fixed_factors:
-                self.trainH(indices,
-                            self.n_components,
-                            self.lambdas,
-                            Sci,
-                            Csi,
-                            card)
+            if self.dist_mode == 'segment':
+                if 1 not in self.fixed_factors:
+                    self.trainW(indices,
+                                self.n_components,
+                                self.lambdas,
+                                Sci,
+                                Csi,
+                                card)
+                if 0 not in self.fixed_factors:
+                    self.trainH(indices,
+                                self.n_components,
+                                self.lambdas,
+                                Sci,
+                                Csi,
+                                card)
+            else:
+                if 1 not in self.fixed_factors:
+                    self.trainW(indices,
+                                self.n_components,
+                                self.lambdas,
+                                card)
+                if 0 not in self.fixed_factors:
+                    self.trainH(indices,
+                                self.n_components,
+                                self.lambdas,
+                                card)                
+
 
     def update_buffer(self, data, buff_ind, it):
         if self.NMF_updates == 'beta':
             score = 0
         if self.NMF_updates == 'groupNMF':
-            score = np.zeros((1, 4))
+            score = np.zeros((1, 4))                
         if self.buff_size > data.shape[0]:
             # "Fitting all the data in the buffer..."
             self.X_buff.set_value(data.astype(theano.config.floatX))
@@ -667,10 +777,6 @@ class ClassBetaNMF(object):
                                               (self.iters['cls'][:, 1] == buff_lbl[i][1]))[0][0],
                                      dtype='int32')
                     self.update(ind, buff_lbl[i])
-                    if self.verbose > 0:
-                        if (it+1) % self.verbose == 0:
-                            score += self.score(ind, buff_lbl[i])
-        return score
 
     def update_iters(self, data, cls_label, ses_label):
         cls, cls_ind = self.check_segments_length(data, cls_label, ses_label)
@@ -682,7 +788,7 @@ class ClassBetaNMF(object):
 def load(fname="factors", updates="beta"):
     f = h5py.File(fname, 'r')
 
-    nmf = classBetaNMF(n_components=f['n_components'][:],
+    nmf = ClassBetaNMF(n_components=f['n_components'][:],
                        beta=f['beta'],
                        NMF_updates="groupNMF",
                        verbose=1)

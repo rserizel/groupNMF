@@ -48,6 +48,28 @@ def group_div(X, W, H, beta, params):
     betaDiv = beta_div(X, W[ind].T, H, beta)
 
     return lambdas[0] * sum_cls + lambdas[1] * sum_ses + betaDiv, betaDiv, sum_cls, sum_ses
+    
+def cls_sum(W, params):
+    k_cls = params[0][0]
+    Sc = params[1]
+    res_cls, up = theano.scan(fn=lambda Sc, prior_result: prior_result +\
+                                            W[Sc, :, 0:k_cls],
+                              outputs_info=T.zeros_like(W[0, :, 0:k_cls]),
+                              sequences=Sc)                       
+
+    return res_cls[-1] 
+    
+def ses_sum (W, params):
+    k_cls = params[0][0]
+    k_ses = params[0][1]
+    Cs = params[1]
+    res_ses, up = theano.scan(fn=lambda Cs, prior_result: prior_result +\
+                                            W[Cs, :, k_cls:k_cls+k_ses],
+                              outputs_info=T.zeros_like(W[0, :, k_cls:k_ses+k_cls]),
+                              sequences=Cs)
+
+
+    return res_ses[-1]
 
 def eucl_dist(X, Y):
     """euclidean distance"""

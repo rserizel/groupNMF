@@ -253,8 +253,8 @@ def group_W(X, W, H, beta, params):
                                                        (T.dot(T.power(T.dot(H, W[ind].T),
                                                                       (beta-1)).T,
                                                               H[:, k_cls:k_ses+k_cls])))
-    up_cls = ifelse(T.gt(Sc[0], 0), up_cls_with_cst, up_cls_without_cst)
-    up_ses = ifelse(T.gt(Cs[0], 0), up_ses_with_cst, up_ses_without_cst)
+    up_cls = ifelse(T.gt(cardSc, 0), up_cls_with_cst, up_cls_without_cst)
+    up_ses = ifelse(T.gt(cardCs, 0), up_ses_with_cst, up_ses_without_cst)
     up_res = W[ind, :, k_ses+k_cls:]*((T.dot(T.mul(T.power(T.dot(H, W[ind].T),
                                                            (beta - 2)),
                                                    X).T,
@@ -262,4 +262,70 @@ def group_W(X, W, H, beta, params):
                                       (T.dot(T.power(T.dot(H, W[ind].T),
                                                      (beta-1)).T,
                                              H[:, k_ses+k_cls:])))
+    return T.concatenate((up_cls, up_ses, up_res), axis=1)
+
+def group_W_nosum(X, W, H, sum_cls, sum_ses, beta, params):
+    """Group udpate for the bases with beta divergence
+
+    Parameters
+    ----------
+    X : Theano tensor
+        data
+    W : Theano tensor
+        Bases
+    H : Theano tensor
+        activation matrix
+    beta : Theano scalar
+    params : array
+        params[0][0] : indice of the group to update (corresponding to a unique couple (spk,ses))
+        params[5][0] : cardSc number of elements in Sc
+        params[5][1] : cardCs number of elements in Cs
+        params[1][0] : k_cls number of vectors in the spk bases
+        params[1][1] : k_ses number of vectors in the session bases
+        params[2] : [lambda1, lambda2] wieght applied on the constraints
+        params[3] : Class distance
+        params[4] : session distance
+
+    Returns
+    -------
+    W : Theano tensor
+        Updated version of the bases
+    """
+    ind = params[0][0]
+    cardSc = params[3][0]
+    cardCs = params[3][1]
+    k_cls = params[1][0]
+    k_ses = params[1][1]
+    lambdas = params[2]
+
+
+    up_cls = W[ind, :, 0:k_cls]*((T.dot(T.mul(T.power(T.dot(H, W[ind].T),
+                                                               (beta - 2)),
+                                                       X).T,
+                                                 H[:, 0:k_cls]) +
+                                           lambdas[0] * sum_cls) /
+                                          (T.dot(T.power(T.dot(H, W[ind].T),
+                                                         (beta-1)).T,
+                                                 H[:, 0:k_cls]) +
+                                           lambdas[0] * cardSc * W[ind, :, 0:k_cls]))
+
+    up_ses = W[ind, :, k_cls:k_ses+k_cls]*((T.dot(T.mul(T.power(T.dot(H, W[ind].T),
+                                                                         (beta - 2)),
+                                                                 X).T,
+                                                           H[:, k_cls:k_ses+k_cls]) +
+                                                     lambdas[1] * sum_ses) /
+                                                    (T.dot(T.power(T.dot(H, W[ind].T),
+                                                                   (beta-1)).T,
+                                                           H[:, k_cls:k_ses+k_cls]) +
+                                                     lambdas[1] * cardCs *
+                                                     W[ind, :, k_cls:k_ses+k_cls]))
+
+    up_res = W[ind, :, k_ses+k_cls:]*((T.dot(T.mul(T.power(T.dot(H, W[ind].T),
+                                                           (beta - 2)),
+                                                   X).T,
+                                             H[:, k_ses+k_cls:])) /
+                                      (T.dot(T.power(T.dot(H, W[ind].T),
+                                                     (beta-1)).T,
+                                             H[:, k_ses+k_cls:])))
+                                       
     return T.concatenate((up_cls, up_ses, up_res), axis=1)
