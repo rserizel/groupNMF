@@ -679,12 +679,12 @@ class ClassBetaNMF(object):
                                     fixed_factors=[1],
                                     buff_size=buff_size,
                                     verbose=self.verbose)
-        nmf_pred.W.set_value(W.astype(theano.config.floatX))
+        nmf_pred.w.set_value(W.astype(theano.config.floatX))
         i = -1
         for i in range(X.shape[0]/buff_size):
             nmf_pred.data_shape = X[i*buff_size:(i+1)*buff_size, ].shape
             print "Bloc: {0}, size {1}".format(i, nmf_pred.data_shape)
-            nmf_pred.H.set_value(base.nnrandn((buff_size,
+            nmf_pred.h.set_value(base.nnrandn((buff_size,
                                                nmf_pred.n_components)).astype(theano.config.floatX))
             nmf_pred.fit(X[i*buff_size:(i+1)*buff_size, ])
             if average_act:
@@ -699,7 +699,7 @@ class ClassBetaNMF(object):
 
         nmf_pred.data_shape = X[(i+1)*buff_size:, ].shape
         print i+1, nmf_pred.data_shape
-        nmf_pred.H.set_value(base.nnrandn((nmf_pred.data_shape[0],
+        nmf_pred.h.set_value(base.nnrandn((nmf_pred.data_shape[0],
                                            nmf_pred.n_components)).astype(theano.config.floatX))
         nmf_pred.fit(X[(i+1)*buff_size:, ])
         if average_act:
