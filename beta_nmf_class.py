@@ -650,8 +650,8 @@ class ClassBetaNMF(object):
     def transform(self,
                   X,
                   comp=[0, 1],
-                  n_iter=N_ITER,
-                  buff_size=BUFF_SIZE,
+                  n_iter=self.n_iter
+                  buff_size=self.buff_size,
                   fname='prediction.h5',
                   dataset='',
                   average_comp=False,
