@@ -653,7 +653,7 @@ class ClassBetaNMF(object):
                   n_iter=N_ITER,
                   buff_size=BUFF_SIZE,
                   fname='prediction.h5',
-                  set='',
+                  dataset='',
                   average_comp=False,
                   average_act=False,
                   seg_length=625):
@@ -665,12 +665,12 @@ class ClassBetaNMF(object):
         print buff_size
         f = h5py.File(fname)
         if average_act:
-            H_out = f.create_dataset("H_{0}".format(set),
+            H_out = f.create_dataset("H_{0}".format(dataset),
                                      (X.shape[0]/seg_length, W.shape[1]))
             buff_size = int(np.floor(buff_size/seg_length)*seg_length)
             out_size = buff_size/seg_length
         else:
-            H_out = f.create_dataset("H_{0}".format(set),
+            H_out = f.create_dataset("H_{0}".format(dataset),
                                      (X.shape[0], W.shape[1]))
         nmf_pred = beta_nmf.BetaNMF((buff_size, X.shape[1]),
                                     n_components=W.shape[1],
