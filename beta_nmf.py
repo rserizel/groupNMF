@@ -89,7 +89,7 @@ class BetaNMF(object):
             gives weights to apply on the cost function
         """
 
-        self.x.set_value(data)
+        self.x.set_value(data.astype(theano.config.floatX))
 
         print 'Fitting NMF model with %d iterations....' % self.n_iter
 
