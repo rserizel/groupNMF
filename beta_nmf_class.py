@@ -688,14 +688,14 @@ class ClassBetaNMF(object):
                                                nmf_pred.n_components)).astype(theano.config.floatX))
             nmf_pred.fit(X[i*buff_size:(i+1)*buff_size, ])
             if average_act:
-                H_out[i*out_size:(i+1)*out_size, ] = np.mean(np.reshape(nmf_pred.H.get_value(),
+                H_out[i*out_size:(i+1)*out_size, ] = np.mean(np.reshape(nmf_pred.h.get_value(),
                                                                         (out_size,
                                                                          seg_length,
-                                                                         nmf_pred.H.get_value()\
+                                                                         nmf_pred.h.get_value()\
                                                                          .shape[1])),
                                                              axis=1)
             else:
-                H_out[i*buff_size:(i+1)*buff_size, ] = nmf_pred.H.get_value()
+                H_out[i*buff_size:(i+1)*buff_size, ] = nmf_pred.h.get_value()
 
         nmf_pred.data_shape = X[(i+1)*buff_size:, ].shape
         print i+1, nmf_pred.data_shape
@@ -703,13 +703,13 @@ class ClassBetaNMF(object):
                                            nmf_pred.n_components)).astype(theano.config.floatX))
         nmf_pred.fit(X[(i+1)*buff_size:, ])
         if average_act:
-            H_out[(i+1)*out_size:, ] = np.mean(np.reshape(nmf_pred.H.get_value(),
+            H_out[(i+1)*out_size:, ] = np.mean(np.reshape(nmf_pred.h.get_value(),
                                                           (H_out.shape[0]-(i+1)*out_size,
                                                            seg_length,
-                                                           nmf_pred.H.get_value().shape[1])),
+                                                           nmf_pred.h.get_value().shape[1])),
                                                axis=1)
         else:
-            H_out[(i+1)*buff_size:, ] = nmf_pred.H.get_value()
+            H_out[(i+1)*buff_size:, ] = nmf_pred.h.get_value()
         f.close()
 
     def update(self, ind, lbl):
