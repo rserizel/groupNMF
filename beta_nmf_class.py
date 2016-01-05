@@ -652,13 +652,17 @@ class ClassBetaNMF(object):
     def transform(self,
                   X,
                   comp=[0, 1],
-                  n_iter=self.n_iter,
-                  buff_size=self.buff_size,
+                  n_iter=None,
+                  buff_size=None,
                   fname='prediction.h5',
                   dataset='',
                   average_comp=False,
                   average_act=False,
                   seg_length=625):
+        if n_iter == None:
+            n_iter = self.n_iter
+        if buff_size == None:
+            buff_size = self.buff_size
         if average_comp:
             W = self.average_and_select(comp)
         else:
