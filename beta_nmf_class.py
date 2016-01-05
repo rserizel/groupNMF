@@ -102,7 +102,7 @@ class ClassBetaNMF(object):
                  normalize=False, fixed_factors=None, verbose=0,
                  dist_mode='segment'):
         self.data_shape = data.shape
-        self.buff_size = buff_size
+        self.buff_size = np.min((buff_size, data.shape[0]))
         self.n_components = np.asarray(n_components, dtype='int32')
         self.beta = theano.shared(np.asarray(beta, theano.config.floatX), name="beta")
         self.verbose = verbose
@@ -257,6 +257,8 @@ class ClassBetaNMF(object):
 
         buff = self.generate_buffer_from_lbl(X, cls_label, ses_label,
                                              random=True, truncate=True)
+        if self.buff_size > X.shape[0]:
+            self.X_buff.set_value(X.astype(theano.config.floatX))
         self.scores.append(self.score_buffer(X, buff))
         print 'Fitting NMF model with %d iterations....' % self.n_iter
         for it in range(self.n_iter):
@@ -607,7 +609,7 @@ class ClassBetaNMF(object):
             score = np.zeros((1, 4))
         if self.buff_size > data.shape[0]:
             # "Fitting all the data in the buffer..."
-            self.X_buff.set_value(data.astype(theano.config.floatX))
+            # self.X_buff.set_value(data.astype(theano.config.floatX))
             for i in range(len(buff_ind)):
                 ind = np.asarray(np.where((self.iters['cls'][:, 0] == buff_ind[i][0]) &
                                           (self.iters['cls'][:, 1] == buff_ind[i][1]))[0][0],
@@ -755,7 +757,7 @@ class ClassBetaNMF(object):
             score = np.zeros((1, 4))                
         if self.buff_size > data.shape[0]:
             # "Fitting all the data in the buffer..."
-            self.X_buff.set_value(data.astype(theano.config.floatX))
+            # self.X_buff.set_value(data.astype(theano.config.floatX))
             for i in range(len(buff_ind)):
                 ind = np.asarray(np.where((self.iters['cls'][:, 0] == buff_ind[i][0]) &
                                           (self.iters['cls'][:, 1] == buff_ind[i][1]))[0][0],
