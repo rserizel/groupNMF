@@ -64,6 +64,8 @@ class BetaNMF(object):
         self.verbose = verbose
         self.n_iter = n_iter
         self.scores = []
+        if fixed_factors == None:
+            fixed_factors = []
         self.fixed_factors = fixed_factors
         fact_ = [base.nnrandn((dim, self.n_components)) for dim in data_shape]
         self.w = theano.shared(fact_[1].astype(theano.config.floatX),
