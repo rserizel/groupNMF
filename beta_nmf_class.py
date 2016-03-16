@@ -732,7 +732,9 @@ class ClassBetaNMF(object):
                   dataset='',
                   average_comp=False,
                   average_act=False,
-                  seg_length=625):
+                  seg_length=625,
+                  l_sparse=0,
+                  sparse_idx=None):
         if n_iter == None:
             n_iter = self.n_iter
         if buff_size == None:
@@ -758,7 +760,9 @@ class ClassBetaNMF(object):
                                     n_iter=n_iter,
                                     fixed_factors=[1],
                                     buff_size=buff_size,
-                                    verbose=self.verbose)
+                                    verbose=self.verbose,
+                                    l_sparse=l_sparse,
+                                    sparse_idx=sparse_idx)
         nmf_pred.w.set_value(W.astype(theano.config.floatX))
         i = -1
         for i in range(X.shape[0]/buff_size):
