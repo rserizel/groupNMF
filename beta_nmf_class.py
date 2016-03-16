@@ -137,7 +137,7 @@ class ClassBetaNMF(object):
         self.X_buff = theano.shared(np.zeros((self.buff_size,
                                               self.data_shape[1])).astype(theano.config.floatX),
                                     name="X_buff")
-        if (self.NMF_update == 'groupNMF') & (self.dist_mode == 'iter'):
+        if (self.NMF_updates == 'groupNMF') & (self.dist_mode == 'iter'):
             self.cls_sums = theano.shared(np.zeros((np.max(cls_label)+1,
                                                    self.data_shape[1],
                                                    self.n_components[0])
@@ -623,7 +623,7 @@ class ClassBetaNMF(object):
             W_update = T.set_subtensor(self.W[tind[0]],
                                        updates.group_W(self.X_buff[tind[1]:tind[2], ],
                                                        self.W,
-                                                       self.Wn
+                                                       self.Wn,
                                                        self.H[tind[3]:tind[4], ],
                                                        self.beta,
                                                        tparams))
