@@ -51,7 +51,8 @@ class BetaNMF(object):
 
     # Constructor
     def __init__(self, data_shape, n_components=50, beta=0, n_iter=50,
-                 fixed_factors=None, buff_size=0, verbose=0):
+                 fixed_factors=None, buff_size=0, verbose=0,
+                 l_sparse=0., sparse_idx=None):
         self.data_shape = data_shape
         self.n_components = n_components
         if buff_size > 0:
@@ -64,7 +65,7 @@ class BetaNMF(object):
         self.verbose = verbose
         self.n_iter = n_iter
         self.scores = []
-        if fixed_factors == None:
+        if fixed_factors is None:
             fixed_factors = []
         self.fixed_factors = fixed_factors
         fact_ = [base.nnrandn((dim, self.n_components)) for dim in data_shape]
@@ -75,6 +76,15 @@ class BetaNMF(object):
         self.factors_ = [self.h, self.w]
         self.x = theano.shared(np.zeros((data_shape)).astype(theano.config.floatX),
                                name="X")
+
+        self.l_sparse = theano.shared(l_sparse, name="l_sparse")
+        if self.l_sparse.get_value() > 0:
+            if sparse_idx is None:
+                self.sparse_idx = None
+            else:
+                self.sparse_idx = theano.shared(
+                    sparse_idx, name="sparse_idx")
+
 
         self.get_updates_functions()
         self.get_div_function()
@@ -131,7 +141,23 @@ class BetaNMF(object):
     def get_updates_functions(self):
         """compile the theano based update functions"""
         print "Standard rules for beta-divergence"
-        h_update = updates.beta_H(self.x, self.w, self.h, self.beta)
+        if self.l_sparse.get_value() == 0:
+            h_update = updates.beta_H(self.x, self.w, self.h, self.beta)
+        else:
+            if self.sparse_idx is None:
+                h_update = updates.beta_H_Sparse(self.x,
+                                                      self.w,
+                                                      self.h,
+                                                      self.beta,
+                                                      self.l_sparse)
+            else:
+                h_update = updates.beta_H_groupSparse(self.x,
+                                                      self.w,
+                                                      self.h,
+                                                      self.beta,
+                                                      self.l_sparse,
+                                                      self.sparse_idx[0, ],
+                                                      self.sparse_idx[1, ])
         w_update = updates.beta_W(self.x, self.w, self.h, self.beta)
         self.train_h = theano.function(inputs=[],
                                        outputs=[],

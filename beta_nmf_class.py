@@ -52,7 +52,8 @@ class ClassBetaNMF(object):
          * beta=1 : Kullback Leibler
          * beta=0 : Itakura-Saito
 
-    NMF_updates : multiplicatives rule to update NMF 'beta' or 'groupNMF' (default beta-NMF)
+    NMF_updates : multiplicatives rule to update NMF 'beta' or 'groupNMF'
+    (default beta-NMF)
         string
 
     n_iter : number of iterations
@@ -65,10 +66,12 @@ class ClassBetaNMF(object):
 
     normalize : normalize the column of W
         boolean
-        
+
     dist_mode : 'segment' or 'iter'
-        * 'segment' the constraint distance is computed locally for each new segment
-        * 'iter' the constraint distances are computed once at the beginning of the iteration
+        * 'segment' the constraint distance is computed locally
+          for each new segment
+        * 'iter' the constraint distances are computed once at the beginning
+          of the iteration
 
 
     fixed_factors : list of factors that are not updated
@@ -85,13 +88,14 @@ class ClassBetaNMF(object):
 
     factors_: list of arrays (theano shared variables)
         The estimated factors
-        
+
     cst_dist: list of arrays (theano shared variable)
-        Contains the class distances and the session distances 
+        Contains the class distances and the session distances
 
     X_buff: buffer for the data (theano shared variable)
 
-    trainW and trainH: update function for the factors W and H (theano functions)
+    trainW and trainH: update function for the factors W and H
+    (theano functions)
     """
 
     # Constructor
@@ -100,11 +104,12 @@ class ClassBetaNMF(object):
                  n_components=(K_CLS, K_SES, K_RES), beta=BETA,
                  NMF_updates='beta', n_iter=N_ITER, lambdas=[0, 0, 0],
                  normalize=False, fixed_factors=None, verbose=0,
-                 dist_mode='segment'):
+                 dist_mode='segment',Wn=None):
         self.data_shape = data.shape
         self.buff_size = np.min((buff_size, data.shape[0]))
         self.n_components = np.asarray(n_components, dtype='int32')
-        self.beta = theano.shared(np.asarray(beta, theano.config.floatX), name="beta")
+        self.beta = theano.shared(np.asarray(beta, theano.config.floatX),
+                                  name="beta")
         self.verbose = verbose
         self.normalize = normalize
         self.lambdas = np.asarray(lambdas, dtype=theano.config.floatX)
@@ -112,8 +117,8 @@ class ClassBetaNMF(object):
         self.NMF_updates = NMF_updates
         self.iters = {}
         self.scores = []
-        self.dist_mode=dist_mode
-        if fixed_factors==None:
+        self.dist_mode = dist_mode
+        if fixed_factors is None:
             fixed_factors = []
         self.fixed_factors = fixed_factors
         fact_ = np.asarray([base.nnrandn((self.data_shape[1],
@@ -127,18 +132,26 @@ class ClassBetaNMF(object):
         self.H = theano.shared(fact_.astype(theano.config.floatX), name="H",
                                borrow=True, allow_downcast=True)
         self.factors_ = [self.H, self.W]
+        if Wn not None:
+            self.Wn = Wn
         self.X_buff = theano.shared(np.zeros((self.buff_size,
                                               self.data_shape[1])).astype(theano.config.floatX),
                                     name="X_buff")
-        if self.dist_mode == 'iter':
-            self.cls_sums= theano.shared(np.zeros((np.max(cls_label)+1, self.data_shape[1], self.n_components[0])).astype(theano.config.floatX), 
-                                         name="cls_sums",
-                                         borrow=True, 
-                                         allow_downcast=True)
-            self.ses_sums= theano.shared(np.zeros((np.max(ses_label)+1, self.data_shape[1], self.n_components[1])).astype(theano.config.floatX), 
-                                         name="ses_sums",
-                                         borrow=True, 
-                                         allow_downcast=True)
+        if (self.NMF_update == 'groupNMF') & (self.dist_mode == 'iter'):
+            self.cls_sums = theano.shared(np.zeros((np.max(cls_label)+1,
+                                                   self.data_shape[1],
+                                                   self.n_components[0])
+                                                   ).astype(theano.config.floatX),
+                                          name="cls_sums",
+                                          borrow=True,
+                                          allow_downcast=True)
+            self.ses_sums = theano.shared(np.zeros((np.max(ses_label)+1,
+                                                   self.data_shape[1],
+                                                   self.n_components[1])
+                                                   ).astype(theano.config.floatX),
+                                          name="ses_sums",
+                                          borrow=True,
+                                          allow_downcast=True)
             self.get_sum_function()
         self.get_updates_functions()
         self.get_norm_function()
@@ -422,7 +435,27 @@ class ClassBetaNMF(object):
                                        name="div",
                                        allow_input_downcast=True,
                                        on_unused_input='ignore')
-                                       
+
+        if self.NMF_updates == 'noiseNMF':
+            tcomp = T.ivector('comp')
+            tlambda = T.fvector('lambda')
+            tSc = T.ivector('Sc')
+            tparams = [tind, tcomp, tlambda, tSc]
+            cost, beta_div, cls_dist, ses_dist = costs.noise_div(self.X_buff[tind[1]:tind[2], ],
+                                                                 self.W,
+                                                                 self.Wn,
+                                                                 self.H[tind[3]:tind[4], ],
+                                                                 self.beta,
+                                                                 tparams)
+
+            self.div = theano.function(inputs=[tind, tcomp, tlambda, tSc],
+                                       outputs=[cost,
+                                                beta_div,
+                                                cls_dist,
+                                                ses_dist],
+                                       name="div",
+                                       allow_input_downcast=True,
+                                       on_unused_input='ignore')
 
 
     def get_norm_function(self):
@@ -573,7 +606,48 @@ class ClassBetaNMF(object):
                                               name="trainW",
                                               on_unused_input='ignore',
                                               allow_input_downcast=True)
+        if self.NMF_updates == 'noiseNMF':
+            tcomp = T.ivector('comp')
+            tlambda = T.fvector('lambda')
+            tcard = T.bvector('card')
 
+            print "Group NMF with noise reference rules for beta-divergence" 
+            tSc = T.ivector('Sc')
+            tparams = [tind, tcomp, tlambda, tSc, tCs, tcard]               
+            H_update = T.set_subtensor(self.H[tind[3]:tind[4], ],
+                                       updates.group_H(self.X_buff[tind[1]:tind[2], ],
+                                                       self.W[tind[0]],
+                                                       self.H,
+                                                       self.beta,
+                                                       tparams))
+            W_update = T.set_subtensor(self.W[tind[0]],
+                                       updates.group_W(self.X_buff[tind[1]:tind[2], ],
+                                                       self.W,
+                                                       self.Wn
+                                                       self.H[tind[3]:tind[4], ],
+                                                       self.beta,
+                                                       tparams))
+            self.trainH = theano.function(inputs=[tind,
+                                                  tcomp,
+                                                  tlambda,
+                                                  tSc,
+                                                  tCs,
+                                                  tcard],
+                                          outputs=[],
+                                          updates={self.H: H_update},
+                                          name="trainH",
+                                          on_unused_input='ignore',
+                                          allow_input_downcast=True)
+            self.trainW = theano.function(inputs=[tind,
+                                                  tcomp,
+                                                  tlambda,
+                                                  tSc,
+                                                  tcard],
+                                          outputs=[],
+                                          updates={self.W: W_update},
+                                          name="trainW",
+                                          on_unused_input='ignore',
+                                          allow_input_downcast=True)
 
     def normalize_W_H(self):
         for i in range(len(self.iters['cls'])):

@@ -48,7 +48,25 @@ def group_div(X, W, H, beta, params):
     betaDiv = beta_div(X, W[ind].T, H, beta)
 
     return lambdas[0] * sum_cls + lambdas[1] * sum_ses + betaDiv, betaDiv, sum_cls, sum_ses
-    
+
+def noise_div(X, W, Wn, H, beta, params):
+    ind = params[0][0]
+    k_cls = params[1][0]
+    k_ses = params[1][1]
+    lambdas = params[2]
+    Sc = params[3]
+    sum_ses = eucl_dist(W[ind, :, k_cls:k_cls+k_ses],
+                        Wn[:, k_cls:k_cls+k_ses])
+    res_cls, up = theano.scan(fn=lambda Sc, prior_result: prior_result +\
+                                            eucl_dist(W[ind, :, 0:k_cls],
+                                                      W[Sc, :, 0:k_cls]),
+                              outputs_info=T.zeros_like(beta),
+                              sequences=Sc)
+    sum_cls = ifelse(T.gt(Sc[0], 0), res_cls[-1], T.zeros_like(beta))
+    betaDiv = beta_div(X, W[ind].T, H, beta)
+
+    return lambdas[0] * sum_cls + lambdas[1] * sum_ses + betaDiv, betaDiv, sum_cls, sum_ses
+   
 def cls_sum(W, params):
     k_cls = params[0][0]
     Sc = params[1]
