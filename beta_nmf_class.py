@@ -132,7 +132,7 @@ class ClassBetaNMF(object):
         self.H = theano.shared(fact_.astype(theano.config.floatX), name="H",
                                borrow=True, allow_downcast=True)
         self.factors_ = [self.H, self.W]
-        if Wn not None:
+        if Wn is not None:
             self.Wn = Wn
         self.X_buff = theano.shared(np.zeros((self.buff_size,
                                               self.data_shape[1])).astype(theano.config.floatX),
