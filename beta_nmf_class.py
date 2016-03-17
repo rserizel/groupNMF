@@ -680,7 +680,7 @@ class ClassBetaNMF(object):
     def score_buffer(self, data, buff_ind):
         if self.NMF_updates == 'beta':
             score = 0
-        if self.NMF_updates == 'groupNMF':
+        else:
             score = np.zeros((1, 4))
         if self.buff_size > data.shape[0]:
             # "Fitting all the data in the buffer..."
