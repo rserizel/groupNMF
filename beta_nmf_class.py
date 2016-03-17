@@ -830,7 +830,22 @@ class ClassBetaNMF(object):
                     self.trainH(indices,
                                 self.n_components,
                                 self.lambdas,
-                                card)                
+                                card)  
+        if self.NMF_updates == 'noiseNMF':
+            if 1 not in self.fixed_factors:
+                self.trainW(indices,
+                            self.n_components,
+                            self.lambdas,
+                            Sci,
+                            Csi,
+                            card)
+            if 0 not in self.fixed_factors:
+                self.trainH(indices,
+                            self.n_components,
+                            self.lambdas,
+                            Sci,
+                            Csi,
+                            card)
 
 
     def update_buffer(self, data, buff_ind, it):
