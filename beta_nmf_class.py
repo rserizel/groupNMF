@@ -621,7 +621,7 @@ class ClassBetaNMF(object):
                                                        self.beta,
                                                        tparams))
             W_update = T.set_subtensor(self.W[tind[0]],
-                                       updates.group_W(self.X_buff[tind[1]:tind[2], ],
+                                       updates.noise_W(self.X_buff[tind[1]:tind[2], ],
                                                        self.W,
                                                        self.Wn,
                                                        self.H[tind[3]:tind[4], ],
