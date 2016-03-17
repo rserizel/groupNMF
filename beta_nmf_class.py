@@ -613,6 +613,7 @@ class ClassBetaNMF(object):
 
             print "Group NMF with noise reference rules for beta-divergence" 
             tSc = T.ivector('Sc')
+            tCs = T.ivector('Cs')
             tparams = [tind, tcomp, tlambda, tSc, tCs, tcard]               
             H_update = T.set_subtensor(self.H[tind[3]:tind[4], ],
                                        updates.group_H(self.X_buff[tind[1]:tind[2], ],
