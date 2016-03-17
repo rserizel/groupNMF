@@ -56,7 +56,7 @@ def noise_div(X, W, Wn, H, beta, params):
     lambdas = params[2]
     Sc = params[3]
     sum_ses = eucl_dist(W[ind, :, k_cls:k_cls+k_ses],
-                        Wn[:, k_cls:k_cls+k_ses])
+                        Wn)
     res_cls, up = theano.scan(fn=lambda Sc, prior_result: prior_result +\
                                             eucl_dist(W[ind, :, 0:k_cls],
                                                       W[Sc, :, 0:k_cls]),
