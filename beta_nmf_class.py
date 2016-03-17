@@ -674,8 +674,10 @@ class ClassBetaNMF(object):
         indices, Csi, Sci, _ = self.compute_sum_indices(ind, lbl)
         if self.NMF_updates == 'beta':
             return self.div(indices)
-        else:
+        elif self.NMF_updates == 'groupNMF':
             return self.div(indices, self.n_components, self.lambdas, Sci, Csi)
+        else:
+            return self.div(indices, self.n_components, self.lambdas, Sci)
 
     def score_buffer(self, data, buff_ind):
         if self.NMF_updates == 'beta':
