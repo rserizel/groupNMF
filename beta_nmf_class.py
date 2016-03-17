@@ -302,7 +302,7 @@ class ClassBetaNMF(object):
                     if self.NMF_updates == 'beta':
                         if self.scores[-1] > 0:
                             print 'Score: %.1f' % self.score[-1]
-                    if self.NMF_updates == 'groupNMF':
+                    else:
                         if self.scores[-1][0][0] > 0:
                             print 'Score: %.1f' % self.scores[-1][0][0]
                             print 'Beta-divergence: %.1f' % self.scores[-1][0][1]
@@ -674,7 +674,7 @@ class ClassBetaNMF(object):
         indices, Csi, Sci, _ = self.compute_sum_indices(ind, lbl)
         if self.NMF_updates == 'beta':
             return self.div(indices)
-        if self.NMF_updates == 'groupNMF':
+        else:
             return self.div(indices, self.n_components, self.lambdas, Sci, Csi)
 
     def score_buffer(self, data, buff_ind):
@@ -851,7 +851,7 @@ class ClassBetaNMF(object):
     def update_buffer(self, data, buff_ind, it):
         if self.NMF_updates == 'beta':
             score = 0
-        if self.NMF_updates == 'groupNMF':
+        else:
             score = np.zeros((1, 4))                
         if self.buff_size > data.shape[0]:
             # "Fitting all the data in the buffer..."
