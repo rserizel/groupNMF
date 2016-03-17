@@ -643,6 +643,7 @@ class ClassBetaNMF(object):
                                                   tcomp,
                                                   tlambda,
                                                   tSc,
+                                                  tCs,
                                                   tcard],
                                           outputs=[],
                                           updates={self.W: W_update},
