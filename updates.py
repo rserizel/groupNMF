@@ -383,7 +383,7 @@ def noise_W(X, W, Wn, H, beta, params):
                                                                          (beta - 2)),
                                                                  X).T,
                                                            H[:, k_cls:k_ses+k_cls]) +
-                                                     lambdas[1] * Wn[:, k_cls:k_ses+k_cls]) /
+                                                     lambdas[1] * Wn) /
                                                     (T.dot(T.power(T.dot(H, W[ind].T),
                                                                    (beta-1)).T,
                                                            H[:, k_cls:k_ses+k_cls]) +
