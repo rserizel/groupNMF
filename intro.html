@@ -1,0 +1,345 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Group-NMF with \(\beta\) -divergence &mdash; Group NMF with beta divergence 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Group NMF with beta divergence 1.0 documentation" href="index.html" />
+    <link rel="next" title="Documentation" href="doc.html" />
+    <link rel="prev" title="Group NMF with beta divergence’s documentation" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="doc.html" title="Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Group NMF with beta divergence’s documentation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Group NMF with beta divergence 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="group-nmf-with-divergence">
+<h1>Group-NMF with  <span class="math">\(\beta\)</span> -divergence<a class="headerlink" href="#group-nmf-with-divergence" title="Permalink to this headline">¶</a></h1>
+<p>In <a class="footnote-reference" href="#id18" id="id1">[1]</a> we propose an approach to speaker identification that relies on group-nonnegative matrix factorisation (NMF) and that is inspired by the I-vector training procedure. Given data measured with several subjects, the key idea in group-NMF is to track inter-subject and intra-subject variations by constraining a set of common bases across subjects in the decomposition dictionaries. This has originally been applied to the analysis of electroencephalograms <a class="footnote-reference" href="#id19" id="id2">[2]</a>. The approach presented here extends this idea and proposes to capture inter-class and inter-session variabilities by constraining a set of class-dependent bases across sessions and a set of session-dependent bases across classes. This approach is inspired by the joint factor analysis applied to the speaker identification problem <a class="footnote-reference" href="#id20" id="id3">[3]</a>. In the following, first the general NMF framework with <span class="math">\(\beta\)</span> -divergence and multiplicative updates is describe, then we present the group-NMF approach with class and session similarity constraints.</p>
+<div class="section" id="nmf-with-divergence-and-multiplicative-updates">
+<h2>NMF with <span class="math">\(\beta\)</span> -divergence and multiplicative updates<a class="headerlink" href="#nmf-with-divergence-and-multiplicative-updates" title="Permalink to this headline">¶</a></h2>
+<p>Consider the (nonnegative) matrix <span class="math">\(\textbf{V}\in\mathbb{R}_+^{F\times N}\)</span>. The goal of NMF <a class="footnote-reference" href="#id21" id="id4">[4]</a> is to find a factorisation for <span class="math">\(\textbf{V}\)</span> of the form:</p>
+<div class="math">
+\[\textbf{V} \approx \textbf{W}\textbf{H} .. _nmf:\]</div>
+<p>where <span class="math">\(\textbf{W}\in\mathbb{R}_+^{F\times K}\)</span> , <span class="math">\(\textbf{H}\in\mathbb{R}_+^{K\times N}\)</span> and <span class="math">\(K\)</span> is the number of components in the decomposition. The NMF model estimation is usually considered as solving the following optimisation problem:</p>
+<div class="math">
+\[\min_{\textbf{W}\textbf{H}}D(\textbf{V} | \textbf{W}\textbf{H})\quad\mathrm{s.t.}\quad\textbf{W}\geq 0,\ \textbf{H}\geq 0\mathrm{.}\]</div>
+<p>Where <span class="math">\(D\)</span> is a separable divergence such as:</p>
+<div class="math">
+\[D(\textbf{V}|\textbf{W}\textbf{H}) = \sum\limits_{f=1}^{F}\sum\limits_{n=1}^{N}d([\textbf{V}]_{fn}|[\textbf{WH}]_{fn})\textrm{,}\]</div>
+<p>with <span class="math">\([.]_{fn}\)</span> is the element on column <span class="math">\(n\)</span> and line <span class="math">\(f\)</span> of a matrix and <span class="math">\(d\)</span> is a scalar cost function. A common choice for the cost function is the <span class="math">\(\beta\)</span> -divergence <a class="footnote-reference" href="#id22" id="id5">[5]</a>  <a class="footnote-reference" href="#id23" id="id6">[6]</a> <a class="footnote-reference" href="#id24" id="id7">[7]</a> defined as follows:</p>
+<div class="math">
+\[\begin{split}d_{\beta}(x|y)\triangleq
+\begin{cases}
+\frac{1}{\beta(\beta -1)} (x^{\beta} + (\beta -1)y^{\beta} - \beta xy^{(\beta-1)})&amp;\beta\in\mathbb{R}\backslash\{0,1\}\nonumber\\
+x\log\frac{x}{y} - x + y&amp;\beta=1\nonumber\\
+\frac{x}{y} -\log\frac{x}{y} - 1&amp;\beta=0\nonumber\textrm{.}
+\end{cases}\end{split}\]</div>
+<p>Popular cost functions such as the Euclidean distance, the generalised KL divergence <a class="footnote-reference" href="#id25" id="id8">[8]</a> and the IS divergence <a class="footnote-reference" href="#id26" id="id9">[9]</a> and all particular cases of the <span class="math">\(\beta$-divergence (obtained for :math:\)</span>beta=2` , <span class="math">\(1\)</span> and <span class="math">\(0\)</span>, respectively). The use of the <span class="math">\(\beta\)</span> -divergence for NMF has been studied extensively in Févotte et al. <a class="footnote-reference" href="#id27" id="id10">[10]</a>.  In most cases NMF problem is solved using a two-block coordinate descent approach. Each of the factors <span class="math">\(\textbf{W}\)</span> and <span class="math">\(\textbf{H}\)</span> is optimised alternatively. The sub-problem in one factor can then be considered as a nonnegative least square problem (NNLS) <a class="footnote-reference" href="#id28" id="id11">[11]</a>. The approach implemented here to solve these NNLS problems relies on the multiplicative update rules introduced in Lee et al. <a class="footnote-reference" href="#id21" id="id12">[4]</a> for the Euclidean distance and later generalised to the the <span class="math">\(\beta\)</span> -divergence <a class="footnote-reference" href="#id27" id="id13">[10]</a> :</p>
+<div class="math">
+\[\begin{split}\begin{align}
+\textbf{H}&amp;\gets \textbf{H}\odot\frac{\textbf{W}^T\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]}
+{\textbf{W}^T(\textbf{W}\textbf{H})^{\beta-1}}_upH\\
+\textbf{W}&amp;\gets \textbf{W}\odot\frac{\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]\textbf{H}^T }
+{(\textbf{W}\textbf{H})^{\beta-1}\textbf{H}^T}\mathrm{;}\label{upW}
+\end{align}\end{split}\]</div>
+<p>where <span class="math">\(\odot\)</span> is the element-wise product (Hadamard product) and division and power are element-wise. The matrices <span class="math">\(\textbf{H}\)</span> and <span class="math">\(\textbf{W}\)</span> are then updated according to an alternating update scheme.</p>
+</div>
+<div class="section" id="group-nmf-with-class-and-session-similarity-constraints">
+<h2>Group NMF with class and session similarity constraints<a class="headerlink" href="#group-nmf-with-class-and-session-similarity-constraints" title="Permalink to this headline">¶</a></h2>
+<p>In the approach presented above, the matrix factorisation is totally unsupervised and does not account for class variability or session variability. The approach introduced in Serizel <em>et al.</em> <a class="footnote-reference" href="#id18" id="id14">[1]</a> intends to take these variabilities into account. It derives from group-NMF <a class="footnote-reference" href="#id19" id="id15">[2]</a> and is inspired by exemplar-based approaches for the speaker identification problem <a class="footnote-reference" href="#id29" id="id16">[12]</a>.</p>
+<div class="section" id="nmf-on-speaker-utterances-for-speaker-identification">
+<h3>NMF on speaker utterances for speaker identification<a class="headerlink" href="#nmf-on-speaker-utterances-for-speaker-identification" title="Permalink to this headline">¶</a></h3>
+<p>In order to better model speaker identity, we now consider the portion of <span class="math">\(\textbf{V}\)</span> recorded in a session <span class="math">\(s\)</span> in which only the speaker <span class="math">\(c\)</span> is active. This is denoted by <span class="math">\(\textbf{V}^{(cs)}\)</span>, its length is <span class="math">\(N^{(cs)}\)</span> and it can be decomposed according to <a href="#id30"><span class="problematic" id="id31">nmf_</span></a>:</p>
+<div class="math">
+\[\textbf{V}^{(cs)} \approx \textbf{W}^{(cs)} \textbf{H}^{(cs)}\quad \forall\ (c,s) \in\mathcal{C}\times\mathcal{S}_c\nonumber\]</div>
+<p>under nonnegative constraints.</p>
+<p>We define a global cost function which is the sum of all local divergences:</p>
+<div class="math">
+\[J_{\mathrm{global}} = \sum\limits_{c = 1}^{C}\sum\limits_{s\in\mathcal{S}_c} D_{KL}(\textbf{V}^{(cs)} | \textbf{W}^{(cs)} \textbf{H}^{(cs)})\mathrm{.}\label{beta_glob}\]</div>
+<p>Each <span class="math">\(\textbf{V}^{(cs)}\)</span> can be decomposed independently with standard multiplicative rules (ref{upH}, ref{upW}). The bases learnt on the training set are then concatenated to form a global basis. The latter basis is then used to produce features on test sets.</p>
+</div>
+<div class="section" id="class-and-session-similarity-constraints">
+<h3>Class and session similarity constraints<a class="headerlink" href="#class-and-session-similarity-constraints" title="Permalink to this headline">¶</a></h3>
+<p>In order to take the session and speaker variabilities into account we propose to further decompose the dictionaries <span class="math">\(\textbf{W}\)</span> similarly as what was proposed by Lee et al. <a class="footnote-reference" href="#id21" id="id17">[4]</a>. The matrix <span class="math">\(\textbf{W}^{(cs)}\)</span> can indeed be arbitrarily decomposed as follows:</p>
+<div class="math">
+\[\textbf{W}^{(cs)} = \left[\right.\underset{\leftarrow K_{\mathrm{SPK}}\rightarrow} {\textbf{W}^{(cs)}_{\mathrm{SPK}}}|\underset{\leftarrow K_{\mathrm{SES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{SES}}}|\underset{\leftarrow K_{\mathrm{RES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{RES}}}\left.\right]\nonumber\]</div>
+<p>with <span class="math">\(K_{\mathrm{SPK}} + K_{\mathrm{SES}} + K_{\mathrm{RES}} = K\)</span> and where <span class="math">\(K_{\mathrm{SPK}}\)</span>, <span class="math">\(K_{\mathrm{SES}}\)</span> and <span class="math">\(K_{\mathrm{RES}}\)</span> are the number of components in the speaker-dependent bases, the session-dependent bases and the residual bases, respectively.</p>
+<p>The first target is to capture speaker variability. This is related to finding vectors for the speaker bases (<span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SPK}}\)</span>) for each speaker <span class="math">\(c\)</span> that are as close as possible across all the sessions in which the speaker is present, leading to the constraint:</p>
+<div class="math">
+\[\begin{split}J_{\mathrm{SPK}} = \frac{1}{2}\sum\limits_{c=1}^{C}\sum\limits_{s\in\mathcal{S}_c}\sum\limits_{\substack{s_1\in\mathcal{S}_c  \\s_1 \neq s}} \|  \textbf{W}^{(cs)}_{\mathrm{SPK}} -  \textbf{W}^{(cs_1)}_{\mathrm{SPK}}\|^2 &lt; \alpha_1\end{split}\]</div>
+<p>with <span class="math">\(\|.\|^2\)</span> the Euclidean distance and <span class="math">\(\alpha_1\)</span> is the similarity constraint on speaker-dependent bases.</p>
+<p>The second target is to capture session variability. This can be accounted for by finding vectors for the sessions bases (<span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SES}}\)</span>) for each session <span class="math">\(s\)</span> that are as close as possible across all the speakers that speak in the session, leading to the constraint:</p>
+<div class="math">
+\[\begin{split}J_{\mathrm{SES}} = \frac{1}{2}\sum\limits_{s=1}^{S}\sum\limits_{c\in\mathcal{C}_s}\sum\limits_{\substack{c_1\in\mathcal{C}_s  \\c_1 \neq c}} \|  \textbf{W}^{(cs)}_{\mathrm{SES}} -  \textbf{W}^{(c_1s)}_{\mathrm{SES}}\|^2 &lt; \alpha_2\end{split}\]</div>
+<p>where <span class="math">\(\alpha_2\)</span> is the similarity constraint on session-dependent bases.</p>
+<p>The vectors composing the residual bases <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{RES}}\)</span> are left unconstrained to represent characteristics that depend neither on the speaker nor on the session.</p>
+<p>Minimizing the global divergence~eqref{beta_glob} subject to constraints~eqref{cst_spk} and eqref{cst_ses} is equivalent to the following problem:</p>
+<div class="math">
+\[\min\limits_{\textbf{W},\textbf{H}} J_{\mathrm{global}} + \lambda_1 J_{\mathrm{SPK}} + \lambda_2 J_{\mathrm{SES}}\quad\mathrm{s.t.} \quad\textbf{W}\geq 0,\ \textbf{H}\geq 0\]</div>
+<p>which in turn leads to the multiplicative update rules for the dictionaries <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SPK}}\)</span> and <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SES}}\)</span>:</p>
+<div class="math">
+\[\begin{split}\textbf{W}_{\mathrm{SPK}}^{(cs)}&amp;\leftarrow \textbf{W}_{\mathrm{SPK}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2}\sum\limits_{\substack{s_1\in\mathcal{S}_c\\s_1\neq s}}\textbf{W}_{\mathrm{SPK}}^{(cs_1)}}
+{\textbf{1}{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2} \left(\mathrm{Card}(\mathcal{S}_c) - 1\right)\textbf{W}_{\mathrm{SPK}}^{(cs)}}\\
+\label{gUP2}\textbf{W}_{\mathrm{SES}}^{(cs)}&amp;\leftarrow \textbf{W}_{\mathrm{SES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2}\sum\limits_{\substack{c_1\in\mathcal{C}_s\\c_1\neq c}}\textbf{W}_{\mathrm{SES}}^{(c_1s)}}
+{\textbf{1}{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2} \left(\mathrm{Card}(\mathcal{C}_s) - 1\right)\textbf{W}_{\mathrm{SES}}^{(cs)}}\end{split}\]</div>
+<p>We obtained these update rules using the well know heuristic which consists in expressing the gradient of the cost function~eqref{cost} as the difference between a positive contribution and a negative contribution. The multiplicative update then has the form of a quotient of the negative contribution by the positive contribution. The update rules for <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{RES}}\)</span> are similar to the standard rules:</p>
+<div class="math">
+\[\textbf{W}_{\mathrm{RES}}^{(cs)}\leftarrow \textbf{W}_{\mathrm{RES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T }{\textbf{1}{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T}\mathrm{.}\nonumber\]</div>
+<p>Note that the update rules for the activations (<span class="math">\(\textbf{H}^{(cs)}\)</span>) are left unchanged.</p>
+</div>
+</div>
+<div class="section" id="download">
+<h2>Download<a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
+<p>Source code available at <a class="reference external" href="https://github.com/rserizel/groupNMF">https://github.com/rserizel/groupNMF</a></p>
+</div>
+<div class="section" id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Permalink to this headline">¶</a></h2>
+<p>If you are using this source code please consider citing the following paper:</p>
+<div class="topic">
+<p class="topic-title first">Reference</p>
+<ol class="upperalpha simple" start="18">
+<li>Serizel, S. Essid, and G. Richard (2016, March). “Group nonnegative matrix factorisation with speaker and session variability compensation for speaker identification”. In <em>Proc. of ICASSP</em>, pp. 5470-5474, 2016.</li>
+</ol>
+</div>
+<div class="topic">
+<p class="topic-title first">Bibtex</p>
+<p>&#64;inproceedings{serizel2016group,</p>
+<p>title={Group nonnegative matrix factorisation with speaker and session variability compensation for speaker identification},</p>
+<p>author={Serizel, Romain and Essid, Slim and Richard, Ga{&#8220;e}l},</p>
+<p>booktitle={2016 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},</p>
+<p>pages={5470&#8211;5474},</p>
+<p>year={2016},</p>
+<p>organization={IEEE}
+}</p>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<table class="docutils footnote" frame="void" id="id18" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td><ol class="first last upperalpha simple" start="18">
+<li>Serizel, S. Essid, and G. Richard, “Group nonnegative matrix factorisation with speaker and session variability compensation for speaker identification”. In <em>Proc. of ICASSP</em>, pp. 5470-5474, 2016.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id19" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[2]</td><td><ol class="first last upperalpha simple" start="8">
+<li>Lee and S. Choi, “Group nonnegative matrix factorization for EEG classification,” in <em>Proc. of AISTATS</em>, pp. 320–327, 2009.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id20" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[3]</td><td><ol class="first last upperalpha simple" start="16">
+<li>Kenny, G. Boulianne, P. Ouellet, and P. Dumouchel, “Joint factor analysis versus eigenchannels in speaker recognition,” <em>IEEE Transactions on Audio, Speech and Language Processing</em>, vol. 15, pp. 1435–1447, 2007.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id21" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[4]</td><td><ol class="first last upperalpha simple" start="4">
+<li><ol class="first upperalpha" start="4">
+<li>Lee and H. S. Seung, “Learning the parts of objects by non-negative matrix factorization.,” <em>Nature</em>, vol. 401, no. 6755, pp. 788–791, 1999.</li>
+</ol>
+</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id22" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[5]</td><td><ol class="first last upperalpha simple">
+<li>Basu, I. R. Harris, N. L. Hjort, and M. C. Jones, “Robust and efficient estimation by minimising a density power divergence,” <em>Biometrika</em>, vol. 85, no. 3, pp. 549–559, 1998.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id23" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[6]</td><td><ol class="first last upperalpha simple">
+<li>Cichocki and S. Amari, “Families of alpha-beta-and gamma-divergences: Flexible and robust measures of similarities,” <em>Entropy</em>, vol. 12, no. 6, pp. 1532–1568, 2010.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id24" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[7]</td><td><ol class="first last upperalpha simple" start="19">
+<li>Eguchi and Y. Kano, “Robustifing maximum likelihood estimation,” Research Memo 802, Institute of Statistical Mathematics, June 2001.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id25" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[8]</td><td><ol class="first last upperalpha simple" start="19">
+<li>Kullback and R. A. Leibler, “On information and sufficiency,” <em>The annals of mathematical statistics</em>, pp. 79–86, 1951.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id26" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[9]</td><td><ol class="first last upperalpha simple" start="6">
+<li>Itakura, “Minimum prediction residual principle applied to speech recognition,” <em>IEEE Transactions on Acoustics, Speech and Signal Processing</em>, vol. 23, no. 1, pp. 67–72, 1975.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id27" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[10]</td><td><ol class="first last upperalpha simple" start="3">
+<li>Févotte and J. Idier, “Algorithms for nonnegative matrix factorization with the beta-divergence,” <em>Neural Computation</em>, vol. 23, no. 9, pp. 2421–2456, 2011.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id28" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[11]</td><td><ol class="first last upperalpha simple" start="14">
+<li>Gillis, “The why and how of nonnegative matrix factorization,” in <em>Regularization, Optimization, Kernels, and Support Vector Machines</em>, M. Signoretto J.A.K. Suykens and A. Argyriou, Eds., Machine Learning and Pattern Recognition Series, pp. 257 – 291. Chapman &amp; Hall/CRC, 2014.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id29" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[12]</td><td><ol class="first last upperalpha simple">
+<li>Hurmalainen, R. Saeidi, and T. Virtanen, “Noise Robust Speaker Recognition with Convolutive Sparse Coding,” in <em>Proc. of Interspeech</em>, 2015.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Group-NMF with  <span class="math">\(\beta\)</span> -divergence</a><ul>
+<li><a class="reference internal" href="#nmf-with-divergence-and-multiplicative-updates">NMF with <span class="math">\(\beta\)</span> -divergence and multiplicative updates</a></li>
+<li><a class="reference internal" href="#group-nmf-with-class-and-session-similarity-constraints">Group NMF with class and session similarity constraints</a><ul>
+<li><a class="reference internal" href="#nmf-on-speaker-utterances-for-speaker-identification">NMF on speaker utterances for speaker identification</a></li>
+<li><a class="reference internal" href="#class-and-session-similarity-constraints">Class and session similarity constraints</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#download">Download</a></li>
+<li><a class="reference internal" href="#citation">Citation</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Group NMF with beta divergence&#8217;s documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="doc.html"
+                        title="next chapter">Documentation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/intro.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="doc.html" title="Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Group NMF with beta divergence’s documentation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Group NMF with beta divergence 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Romain Serizel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

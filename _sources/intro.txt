@@ -1,0 +1,172 @@
+Group-NMF with  :math:`\beta` -divergence
+-----------------------------------------
+In [1]_ we propose an approach to speaker identification that relies on group-nonnegative matrix factorisation (NMF) and that is inspired by the I-vector training procedure. Given data measured with several subjects, the key idea in group-NMF is to track inter-subject and intra-subject variations by constraining a set of common bases across subjects in the decomposition dictionaries. This has originally been applied to the analysis of electroencephalograms [2]_. The approach presented here extends this idea and proposes to capture inter-class and inter-session variabilities by constraining a set of class-dependent bases across sessions and a set of session-dependent bases across classes. This approach is inspired by the joint factor analysis applied to the speaker identification problem [3]_. In the following, first the general NMF framework with :math:`\beta` -divergence and multiplicative updates is describe, then we present the group-NMF approach with class and session similarity constraints.
+
+NMF with :math:`\beta` -divergence and multiplicative updates
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Consider the (nonnegative) matrix :math:`\textbf{V}\in\mathbb{R}_+^{F\times N}`. The goal of NMF [4]_ is to find a factorisation for :math:`\textbf{V}` of the form:
+
+.. math::
+	\textbf{V} \approx \textbf{W}\textbf{H} .. _nmf:
+
+where :math:`\textbf{W}\in\mathbb{R}_+^{F\times K}` , :math:`\textbf{H}\in\mathbb{R}_+^{K\times N}` and :math:`K` is the number of components in the decomposition. The NMF model estimation is usually considered as solving the following optimisation problem:
+
+.. math::
+	\min_{\textbf{W}\textbf{H}}D(\textbf{V} | \textbf{W}\textbf{H})\quad\mathrm{s.t.}\quad\textbf{W}\geq 0,\ \textbf{H}\geq 0\mathrm{.}
+
+Where :math:`D` is a separable divergence such as:
+
+.. math::
+	D(\textbf{V}|\textbf{W}\textbf{H}) = \sum\limits_{f=1}^{F}\sum\limits_{n=1}^{N}d([\textbf{V}]_{fn}|[\textbf{WH}]_{fn})\textrm{,}
+
+with :math:`[.]_{fn}` is the element on column :math:`n` and line :math:`f` of a matrix and :math:`d` is a scalar cost function. A common choice for the cost function is the :math:`\beta` -divergence [5]_  [6]_ [7]_ defined as follows:
+
+.. math::
+ 	d_{\beta}(x|y)\triangleq 
+  	\begin{cases}
+ 	\frac{1}{\beta(\beta -1)} (x^{\beta} + (\beta -1)y^{\beta} - \beta xy^{(\beta-1)})&\beta\in\mathbb{R}\backslash\{0,1\}\nonumber\\
+ 	x\log\frac{x}{y} - x + y&\beta=1\nonumber\\
+ 	\frac{x}{y} -\log\frac{x}{y} - 1&\beta=0\nonumber\textrm{.}
+ 	\end{cases}
+
+Popular cost functions such as the Euclidean distance, the generalised KL divergence [8]_ and the IS divergence [9]_ and all particular cases of the :math:`\beta$-divergence (obtained for :math:`\beta=2` , :math:`1` and :math:`0`, respectively). The use of the :math:`\beta` -divergence for NMF has been studied extensively in Févotte et al. [10]_.  In most cases NMF problem is solved using a two-block coordinate descent approach. Each of the factors :math:`\textbf{W}` and :math:`\textbf{H}` is optimised alternatively. The sub-problem in one factor can then be considered as a nonnegative least square problem (NNLS) [11]_. The approach implemented here to solve these NNLS problems relies on the multiplicative update rules introduced in Lee et al. [4]_ for the Euclidean distance and later generalised to the the :math:`\beta` -divergence [10]_ :
+
+.. math::
+	\begin{align}
+	\textbf{H}&\gets \textbf{H}\odot\frac{\textbf{W}^T\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]}
+	{\textbf{W}^T(\textbf{W}\textbf{H})^{\beta-1}}_upH\\
+	\textbf{W}&\gets \textbf{W}\odot\frac{\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]\textbf{H}^T }
+	{(\textbf{W}\textbf{H})^{\beta-1}\textbf{H}^T}\mathrm{;}\label{upW}
+	\end{align}
+
+where :math:`\odot` is the element-wise product (Hadamard product) and division and power are element-wise. The matrices :math:`\textbf{H}` and :math:`\textbf{W}` are then updated according to an alternating update scheme.
+
+Group NMF with class and session similarity constraints
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In the approach presented above, the matrix factorisation is totally unsupervised and does not account for class variability or session variability. The approach introduced in Serizel *et al.* [1]_ intends to take these variabilities into account. It derives from group-NMF [2]_ and is inspired by exemplar-based approaches for the speaker identification problem [12]_.
+
+NMF on speaker utterances for speaker identification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to better model speaker identity, we now consider the portion of :math:`\textbf{V}` recorded in a session :math:`s` in which only the speaker :math:`c` is active. This is denoted by :math:`\textbf{V}^{(cs)}`, its length is :math:`N^{(cs)}` and it can be decomposed according to nmf_:
+
+.. math::
+	\textbf{V}^{(cs)} \approx \textbf{W}^{(cs)} \textbf{H}^{(cs)}\quad \forall\ (c,s) \in\mathcal{C}\times\mathcal{S}_c\nonumber
+
+under nonnegative constraints.
+
+We define a global cost function which is the sum of all local divergences:
+
+.. math::
+	J_{\mathrm{global}} = \sum\limits_{c = 1}^{C}\sum\limits_{s\in\mathcal{S}_c} D_{KL}(\textbf{V}^{(cs)} | \textbf{W}^{(cs)} \textbf{H}^{(cs)})\mathrm{.}\label{beta_glob}
+
+
+Each :math:`\textbf{V}^{(cs)}` can be decomposed independently with standard multiplicative rules (\ref{upH}, \ref{upW}). The bases learnt on the training set are then concatenated to form a global basis. The latter basis is then used to produce features on test sets.
+
+Class and session similarity constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to take the session and speaker variabilities into account we propose to further decompose the dictionaries :math:`\textbf{W}` similarly as what was proposed by Lee et al. [4]_. The matrix :math:`\textbf{W}^{(cs)}` can indeed be arbitrarily decomposed as follows:
+
+.. math::
+	\textbf{W}^{(cs)} = \left[\right.\underset{\leftarrow K_{\mathrm{SPK}}\rightarrow} {\textbf{W}^{(cs)}_{\mathrm{SPK}}}|\underset{\leftarrow K_{\mathrm{SES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{SES}}}|\underset{\leftarrow K_{\mathrm{RES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{RES}}}\left.\right]\nonumber
+
+with :math:`K_{\mathrm{SPK}} + K_{\mathrm{SES}} + K_{\mathrm{RES}} = K` and where :math:`K_{\mathrm{SPK}}`, :math:`K_{\mathrm{SES}}` and :math:`K_{\mathrm{RES}}` are the number of components in the speaker-dependent bases, the session-dependent bases and the residual bases, respectively. 
+
+The first target is to capture speaker variability. This is related to finding vectors for the speaker bases (:math:`\textbf{W}^{(cs)}_{\mathrm{SPK}}`) for each speaker :math:`c` that are as close as possible across all the sessions in which the speaker is present, leading to the constraint:
+
+.. math::
+	J_{\mathrm{SPK}} = \frac{1}{2}\sum\limits_{c=1}^{C}\sum\limits_{s\in\mathcal{S}_c}\sum\limits_{\substack{s_1\in\mathcal{S}_c  \\s_1 \neq s}} \|  \textbf{W}^{(cs)}_{\mathrm{SPK}} -  \textbf{W}^{(cs_1)}_{\mathrm{SPK}}\|^2 < \alpha_1
+
+with :math:`\|.\|^2` the Euclidean distance and :math:`\alpha_1` is the similarity constraint on speaker-dependent bases.
+
+The second target is to capture session variability. This can be accounted for by finding vectors for the sessions bases (:math:`\textbf{W}^{(cs)}_{\mathrm{SES}}`) for each session :math:`s` that are as close as possible across all the speakers that speak in the session, leading to the constraint:
+
+.. math::
+	J_{\mathrm{SES}} = \frac{1}{2}\sum\limits_{s=1}^{S}\sum\limits_{c\in\mathcal{C}_s}\sum\limits_{\substack{c_1\in\mathcal{C}_s  \\c_1 \neq c}} \|  \textbf{W}^{(cs)}_{\mathrm{SES}} -  \textbf{W}^{(c_1s)}_{\mathrm{SES}}\|^2 < \alpha_2
+
+where :math:`\alpha_2` is the similarity constraint on session-dependent bases.
+
+The vectors composing the residual bases :math:`\textbf{W}^{(cs)}_{\mathrm{RES}}` are left unconstrained to represent characteristics that depend neither on the speaker nor on the session.
+
+Minimizing the global divergence~\eqref{beta_glob} subject to constraints~\eqref{cst_spk} and \eqref{cst_ses} is equivalent to the following problem:
+
+.. math::
+	\min\limits_{\textbf{W},\textbf{H}} J_{\mathrm{global}} + \lambda_1 J_{\mathrm{SPK}} + \lambda_2 J_{\mathrm{SES}}\quad\mathrm{s.t.} \quad\textbf{W}\geq 0,\ \textbf{H}\geq 0
+
+which in turn leads to the multiplicative update rules for the dictionaries :math:`\textbf{W}^{(cs)}_{\mathrm{SPK}}` and :math:`\textbf{W}^{(cs)}_{\mathrm{SES}}`:
+
+.. math::
+	\textbf{W}_{\mathrm{SPK}}^{(cs)}&\leftarrow \textbf{W}_{\mathrm{SPK}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2}\sum\limits_{\substack{s_1\in\mathcal{S}_c\\s_1\neq s}}\textbf{W}_{\mathrm{SPK}}^{(cs_1)}}
+	{\textbf{1}{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2} \left(\mathrm{Card}(\mathcal{S}_c) - 1\right)\textbf{W}_{\mathrm{SPK}}^{(cs)}}\\
+	\label{gUP2}\textbf{W}_{\mathrm{SES}}^{(cs)}&\leftarrow \textbf{W}_{\mathrm{SES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2}\sum\limits_{\substack{c_1\in\mathcal{C}_s\\c_1\neq c}}\textbf{W}_{\mathrm{SES}}^{(c_1s)}}
+	{\textbf{1}{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2} \left(\mathrm{Card}(\mathcal{C}_s) - 1\right)\textbf{W}_{\mathrm{SES}}^{(cs)}}
+
+
+We obtained these update rules using the well know heuristic which consists in expressing the gradient of the cost function~\eqref{cost} as the difference between a positive contribution and a negative contribution. The multiplicative update then has the form of a quotient of the negative contribution by the positive contribution. The update rules for :math:`\textbf{W}^{(cs)}_{\mathrm{RES}}` are similar to the standard rules:
+
+.. math::
+	\textbf{W}_{\mathrm{RES}}^{(cs)}\leftarrow \textbf{W}_{\mathrm{RES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T }{\textbf{1}{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T}\mathrm{.}\nonumber
+
+Note that the update rules for the activations (:math:`\textbf{H}^{(cs)}`) are left unchanged.
+
+
+Download
+++++++++
+Source code available at https://github.com/rserizel/groupNMF
+
+Citation
+++++++++
+If you are using this source code please consider citing the following paper: 
+
+.. topic:: Reference
+
+	R. Serizel, S. Essid, and G. Richard (2016, March). “Group nonnegative matrix factorisation with speaker and session variability compensation for speaker identification”. In *Proc. of ICASSP*, pp. 5470-5474, 2016.
+
+
+.. topic:: Bibtex
+
+	@inproceedings{serizel2016group,
+
+  	title={Group nonnegative matrix factorisation with speaker and session variability compensation for speaker identification},
+
+  	author={Serizel, Romain and Essid, Slim and Richard, Ga{\"e}l},
+
+  	booktitle={2016 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
+
+  	pages={5470--5474},
+
+  	year={2016},
+
+  	organization={IEEE}
+	}
+
+
+References
+++++++++++
+
+.. [#] R. Serizel, S. Essid, and G. Richard, “Group nonnegative matrix factorisation with speaker and session variability compensation for speaker identification”. In *Proc. of ICASSP*, pp. 5470-5474, 2016.
+
+.. [#] H. Lee and S. Choi, “Group nonnegative matrix factorization for EEG classification,” in *Proc. of AISTATS*, pp. 320–327, 2009.
+
+.. [#] P. Kenny, G. Boulianne, P. Ouellet, and P. Dumouchel, “Joint factor analysis versus eigenchannels in speaker recognition,” *IEEE Transactions on Audio, Speech and Language Processing*, vol. 15, pp. 1435–1447, 2007.
+
+.. [#] D. D. Lee and H. S. Seung, “Learning the parts of objects by non-negative matrix factorization.,” *Nature*, vol. 401, no. 6755, pp. 788–791, 1999.
+
+.. [#] A. Basu, I. R. Harris, N. L. Hjort, and M. C. Jones, “Robust and efficient estimation by minimising a density power divergence,” *Biometrika*, vol. 85, no. 3, pp. 549–559, 1998.
+
+.. [#] A. Cichocki and S. Amari, “Families of alpha-beta-and gamma-divergences: Flexible and robust measures of similarities,” *Entropy*, vol. 12, no. 6, pp. 1532–1568, 2010.
+
+.. [#] S. Eguchi and Y. Kano, “Robustifing maximum likelihood estimation,” Research Memo 802, Institute of Statistical Mathematics, June 2001.
+
+.. [#] S. Kullback and R. A. Leibler, “On information and sufficiency,” *The annals of mathematical statistics*, pp. 79–86, 1951.
+
+.. [#] F. Itakura, “Minimum prediction residual principle applied to speech recognition,” *IEEE Transactions on Acoustics, Speech and Signal Processing*, vol. 23, no. 1, pp. 67–72, 1975.
+
+.. [#] C. Févotte and J. Idier, “Algorithms for nonnegative matrix factorization with the beta-divergence,” *Neural Computation*, vol. 23, no. 9, pp. 2421–2456, 2011.
+
+.. [#] N. Gillis, “The why and how of nonnegative matrix factorization,” in *Regularization, Optimization, Kernels, and Support Vector Machines*, M. Signoretto J.A.K. Suykens and A. Argyriou, Eds., Machine Learning and Pattern Recognition Series, pp. 257 – 291. Chapman & Hall/CRC, 2014.
+
+.. [#] A. Hurmalainen, R. Saeidi, and T. Virtanen, “Noise Robust Speaker Recognition with Convolutive Sparse Coding,” in *Proc. of Interspeech*, 2015.

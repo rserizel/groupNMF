@@ -1,0 +1,16 @@
+Documentation
+-------------
+.. automodule:: beta_nmf_class
+	:members:
+
+.. automodule:: beta_nmf
+
+	.. autoclass:: BetaNMF
+		:members:
+
+.. automodule:: base
+	:members:
+.. automodule:: costs
+	:members:
+.. automodule:: updates
+	:members:

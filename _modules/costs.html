@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>costs &mdash; Group NMF with beta divergence 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Group NMF with beta divergence 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Group NMF with beta divergence 1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for costs</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">cost.py</span>
+<span class="sd">~~~~~~~</span>
+<span class="sd">.. topic:: Contents</span>
+
+<span class="sd">    The cost module regroups the cost functions used for the group NMF&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">theano.tensor</span> <span class="kn">as</span> <span class="nn">T</span>
+<span class="kn">from</span> <span class="nn">theano.ifelse</span> <span class="kn">import</span> <span class="n">ifelse</span>
+<span class="kn">import</span> <span class="nn">theano</span>
+
+
+<div class="viewcode-block" id="beta_div"><a class="viewcode-back" href="../doc.html#costs.beta_div">[docs]</a><span class="k">def</span> <span class="nf">beta_div</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute beta divergence D(X|WH)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X : Theano tensor</span>
+<span class="sd">        data</span>
+<span class="sd">    W : Theano tensor</span>
+<span class="sd">        Bases</span>
+<span class="sd">    H : Theano tensor</span>
+<span class="sd">        activation matrix</span>
+<span class="sd">    beta : Theano scalar</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    div : Theano scalar</span>
+<span class="sd">        beta divergence D(X|WH)&quot;&quot;&quot;</span>
+    <span class="n">div</span> <span class="o">=</span> <span class="n">ifelse</span><span class="p">(</span>
+      <span class="n">T</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+      <span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">T</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">),</span> <span class="mi">2</span><span class="p">)),</span>
+      <span class="n">ifelse</span><span class="p">(</span>
+        <span class="n">T</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span> <span class="o">-</span> <span class="n">T</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">X</span> <span class="o">/</span> <span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="n">ifelse</span><span class="p">(</span>
+          <span class="n">T</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+          <span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="o">-</span> <span class="n">T</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">))))</span> <span class="o">+</span> <span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span> <span class="o">-</span> <span class="n">X</span><span class="p">),</span>
+          <span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span> <span class="o">+</span>
+                <span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">*</span> <span class="n">T</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">),</span> <span class="n">beta</span><span class="p">)</span> <span class="o">-</span>
+                <span class="n">beta</span> <span class="o">*</span> <span class="n">T</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">)),</span> <span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))))))</span>
+    <span class="k">return</span> <span class="n">div</span></div>
+
+
+<div class="viewcode-block" id="group_div"><a class="viewcode-back" href="../doc.html#costs.group_div">[docs]</a><span class="k">def</span> <span class="nf">group_div</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute beta divergence D(X|WH), intra-class distance</span>
+<span class="sd">    and intra-session distance for a particular</span>
+<span class="sd">    (class, session) couple [1]_.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X : Theano tensor</span>
+<span class="sd">        data</span>
+<span class="sd">    W : Theano tensor</span>
+<span class="sd">        Bases</span>
+<span class="sd">    H : Theano tensor</span>
+<span class="sd">        activation matrix</span>
+<span class="sd">    beta : Theano scalar</span>
+<span class="sd">    params : Theano tensor</span>
+<span class="sd">        Matrix of parameter related to class/session.</span>
+<span class="sd">            :params[0][0]: index for the (class, session) couple</span>
+<span class="sd">            :params[1][0]: number of vector basis related to class</span>
+<span class="sd">            :params[1][1]: number of vector basis related to session</span>
+<span class="sd">            :params[2]: weight on the class/session similarity constraints</span>
+<span class="sd">            :params[3]: sessions in which class c appears</span>
+<span class="sd">            :params[4]: classes present in session s</span>
+
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cost : Theano scalar</span>
+<span class="sd">        total cost</span>
+<span class="sd">    div : Theano scalar</span>
+<span class="sd">        beta divergence D(X|WH)</span>
+<span class="sd">    sum_cls : Theano scalar</span>
+<span class="sd">        intra-class distance</span>
+<span class="sd">    sum_ses : Theano scalar</span>
+<span class="sd">        intra-session distance&quot;&quot;&quot;</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">k_cls</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">k_ses</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">lambdas</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">Sc</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">Cs</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">res_ses</span><span class="p">,</span> <span class="n">up</span> <span class="o">=</span> <span class="n">theano</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+      <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">Cs</span><span class="p">,</span>
+      <span class="n">prior_result</span><span class="p">:</span> <span class="n">prior_result</span> <span class="o">+</span> <span class="n">eucl_dist</span><span class="p">(</span>
+        <span class="n">W</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k_cls</span><span class="p">:</span><span class="n">k_cls</span><span class="o">+</span><span class="n">k_ses</span><span class="p">],</span> <span class="n">W</span><span class="p">[</span><span class="n">Cs</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k_cls</span><span class="p">:</span><span class="n">k_cls</span><span class="o">+</span><span class="n">k_ses</span><span class="p">]),</span>
+      <span class="n">outputs_info</span><span class="o">=</span><span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span>
+      <span class="n">sequences</span><span class="o">=</span><span class="n">Cs</span><span class="p">)</span>
+    <span class="n">sum_ses</span> <span class="o">=</span> <span class="n">ifelse</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">Cs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span> <span class="n">res_ses</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span>
+    <span class="n">res_cls</span><span class="p">,</span> <span class="n">up</span> <span class="o">=</span> <span class="n">theano</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+      <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">Sc</span><span class="p">,</span>
+      <span class="n">prior_result</span><span class="p">:</span> <span class="n">prior_result</span> <span class="o">+</span> <span class="n">eucl_dist</span><span class="p">(</span>
+        <span class="n">W</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">k_cls</span><span class="p">],</span> <span class="n">W</span><span class="p">[</span><span class="n">Sc</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">k_cls</span><span class="p">]),</span>
+      <span class="n">outputs_info</span><span class="o">=</span><span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span>
+      <span class="n">sequences</span><span class="o">=</span><span class="n">Sc</span><span class="p">)</span>
+    <span class="n">sum_cls</span> <span class="o">=</span> <span class="n">ifelse</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">Sc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span> <span class="n">res_cls</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span>
+    <span class="n">betaDiv</span> <span class="o">=</span> <span class="n">beta_div</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">W</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">sum_cls</span> <span class="o">+</span> <span class="n">lambdas</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sum_ses</span> <span class="o">+</span> <span class="n">betaDiv</span>
+    <span class="k">return</span> <span class="n">cost</span><span class="p">,</span> <span class="n">betaDiv</span><span class="p">,</span> <span class="n">sum_cls</span><span class="p">,</span> <span class="n">sum_ses</span></div>
+
+
+<div class="viewcode-block" id="noise_div"><a class="viewcode-back" href="../doc.html#costs.noise_div">[docs]</a><span class="k">def</span> <span class="nf">noise_div</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">Wn</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute beta divergence D(X|WH)</span>
+<span class="sd">    noise-related distance (distance to a noise reference)</span>
+<span class="sd">    and intra-speaker distance</span>
+<span class="sd">    for a particular class (only one noise session considered here).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X : Theano tensor</span>
+<span class="sd">        data</span>
+<span class="sd">    W : Theano tensor</span>
+<span class="sd">        Bases</span>
+<span class="sd">    H : Theano tensor</span>
+<span class="sd">        activation matrix</span>
+<span class="sd">    beta : Theano scalar</span>
+<span class="sd">    params : Theano tensor</span>
+<span class="sd">        Matrix of parameter related to class/session.</span>
+<span class="sd">            :params[0][0]: index for the (class, session) couple</span>
+<span class="sd">            :params[1][0]: number of vector basis related to class</span>
+<span class="sd">            :params[1][1]: number of vector basis related to session</span>
+<span class="sd">            :params[2]: weight on the class/session similarity constraints</span>
+<span class="sd">            :params[3]: sessions in which class c appears</span>
+
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cost : Theano scalar</span>
+<span class="sd">        total cost</span>
+<span class="sd">    div : Theano scalar</span>
+<span class="sd">        beta divergence D(X|WH)</span>
+<span class="sd">    sum_cls : Theano scalar</span>
+<span class="sd">        intra-class distance</span>
+<span class="sd">    sum_ses : Theano scalar</span>
+<span class="sd">        distance to noise reference&quot;&quot;&quot;</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">k_cls</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">k_ses</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">lambdas</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">Sc</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">sum_ses</span> <span class="o">=</span> <span class="n">eucl_dist</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k_cls</span><span class="p">:</span><span class="n">k_cls</span><span class="o">+</span><span class="n">k_ses</span><span class="p">],</span>
+                        <span class="n">Wn</span><span class="p">)</span>
+    <span class="n">res_cls</span><span class="p">,</span> <span class="n">up</span> <span class="o">=</span> <span class="n">theano</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+      <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">Sc</span><span class="p">,</span>
+      <span class="n">prior_result</span><span class="p">:</span> <span class="n">prior_result</span> <span class="o">+</span> <span class="n">eucl_dist</span><span class="p">(</span>
+        <span class="n">W</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">k_cls</span><span class="p">],</span> <span class="n">W</span><span class="p">[</span><span class="n">Sc</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">k_cls</span><span class="p">]),</span>
+      <span class="n">outputs_info</span><span class="o">=</span><span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">beta</span><span class="p">),</span>
+      <span class="n">sequences</span><span class="o">=</span><span class="n">Sc</span><span class="p">)</span>
+    <span class="n">sum_cls</span> <span class="o">=</span> <span class="n">ifelse</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">Sc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">),</span> <span class="n">res_cls</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span>
+    <span class="n">betaDiv</span> <span class="o">=</span> <span class="n">beta_div</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">W</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">lambdas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">sum_cls</span> <span class="o">+</span> <span class="n">lambdas</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">sum_ses</span> <span class="o">+</span> <span class="n">betaDiv</span>
+    <span class="k">return</span> <span class="n">cost</span><span class="p">,</span> <span class="n">betaDiv</span><span class="p">,</span> <span class="n">sum_cls</span><span class="p">,</span> <span class="n">sum_ses</span></div>
+
+
+<div class="viewcode-block" id="cls_sum"><a class="viewcode-back" href="../doc.html#costs.cls_sum">[docs]</a><span class="k">def</span> <span class="nf">cls_sum</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute summ of basis for a particular class.</span>
+<span class="sd">    To be used in the constrained multiplicative update rules [1]_.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    W : Theano tensor</span>
+<span class="sd">        Bases</span>
+<span class="sd">    params : Theano tensor</span>
+<span class="sd">        Matrix of parameter related to class/session.</span>
+<span class="sd">            :params[0][0]: number of vector basis related to class</span>
+<span class="sd">            :params[1]: sessions in which class c appears</span>
+
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sum_cls : Theano scalar</span>
+<span class="sd">        sum of the basis for the class&quot;&quot;&quot;</span>
+    <span class="n">k_cls</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">Sc</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">res_cls</span><span class="p">,</span> <span class="n">up</span> <span class="o">=</span> <span class="n">theano</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+      <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">Sc</span><span class="p">,</span>
+      <span class="n">prior_result</span><span class="p">:</span> <span class="n">prior_result</span> <span class="o">+</span> <span class="n">W</span><span class="p">[</span><span class="n">Sc</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">k_cls</span><span class="p">],</span>
+      <span class="n">outputs_info</span><span class="o">=</span><span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="n">k_cls</span><span class="p">]),</span>
+      <span class="n">sequences</span><span class="o">=</span><span class="n">Sc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res_cls</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ses_sum"><a class="viewcode-back" href="../doc.html#costs.ses_sum">[docs]</a><span class="k">def</span> <span class="nf">ses_sum</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute sum of basis for a particular session.</span>
+<span class="sd">    To be used in the constrained multiplicative update rules [1]_.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    W : Theano tensor</span>
+<span class="sd">        Bases</span>
+<span class="sd">    params : Theano tensor</span>
+<span class="sd">        Matrix of parameter related to class/session.</span>
+<span class="sd">            :params[0][0]: number of vector basis related to class</span>
+<span class="sd">            :params[1]: class that appear in session s</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sum_ses : Theano scalar</span>
+<span class="sd">        sum of the basis for the session&quot;&quot;&quot;</span>
+    <span class="n">k_cls</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">k_ses</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">Cs</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">res_ses</span><span class="p">,</span> <span class="n">up</span> <span class="o">=</span> <span class="n">theano</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span>
+      <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">Cs</span><span class="p">,</span>
+      <span class="n">prior_result</span><span class="p">:</span> <span class="n">prior_result</span> <span class="o">+</span> <span class="n">W</span><span class="p">[</span><span class="n">Cs</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k_cls</span><span class="p">:</span><span class="n">k_cls</span><span class="o">+</span><span class="n">k_ses</span><span class="p">],</span>
+      <span class="n">outputs_info</span><span class="o">=</span><span class="n">T</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k_cls</span><span class="p">:</span><span class="n">k_ses</span><span class="o">+</span><span class="n">k_cls</span><span class="p">]),</span>
+      <span class="n">sequences</span><span class="o">=</span><span class="n">Cs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res_ses</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="eucl_dist"><a class="viewcode-back" href="../doc.html#costs.eucl_dist">[docs]</a><span class="k">def</span> <span class="nf">eucl_dist</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute Euclidean distance between X and Y</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X : Theano tensor</span>
+<span class="sd">    Y : Theano tensor</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : Theano scalar</span>
+<span class="sd">        Euclidean distance&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">T</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mf">1.</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">T</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">T</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)))</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Group NMF with beta divergence 1.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Romain Serizel.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>
