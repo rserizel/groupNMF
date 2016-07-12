@@ -1,17 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Copyright © 2015 Telecom ParisTech, TSI
-Auteur(s) : Romain Serizel
-the beta_ntf module is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Lesser General Public License for more details.
-You should have received a copy of the GNU LesserGeneral Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>."""
+beta\_nmf.py
+~~~~~~~~~~~
+
+.. topic:: Contents
+
+  The beta_nmf module includes the beta\_nmf class,
+  fit function and theano functions to compute updates and cost."""
 
 import time
 import numpy as np
@@ -25,40 +20,54 @@ class BetaNMF(object):
     """BetaNMF class
 
     Performs nonnegative matrix factorization with Theano.
+    L1-sparsity and group sparsity constraints can be applied on activations.
 
     Parameters
     ----------
-    data_shape : the shape of the data to approximate
-        tuple composed of integers
+    data_shape : tuple composed of integers
+        the shape of the data to approximate
 
-    n_components : the number of latent components for the NMF model
-        positive integer
+    n_components : positive integer (default 50)
+        the number of latent components for the NMF model
 
-    beta : the beta-divergence to consider
-        Arbitrary float. Particular cases of interest are
+    beta : arbitrary float (default 2)
+        the beta-divergence to consider, particular cases of interest are
          * beta=2 : Euclidean distance
          * beta=1 : Kullback Leibler
          * beta=0 : Itakura-Saito
 
-    n_iter : number of iterations
-        Positive integer
+    n_iter : Positive integer (default 100)
+        number of iterations
+
+    fixed_factors : array (default Null)
+        list of factors that are not updated
+            e.g. fixed_factors = [0] -> H is not updated
+
+            fixed_factors = [1] -> W is not updated
+
+    l_sparse : Float (default 0.)
+        sparsity constraint
+
+    sparse_idx : Array
+        boundaries of the groups for group sparisty [start, stop]
+
+    verbose : Integer
+        the frequence at which the score should be computed and displayed
+        (number of iterations between each computation)
+
 
     Attributes
     ----------
-    factors_: list of arrays
-        The estimated factors
-    """
+    factors : list of arrays
+
+        The estimated factors (factors[0] = H)"""
 
     # Constructor
-    def __init__(self, data_shape, n_components=50, beta=0, n_iter=50,
-                 fixed_factors=None, buff_size=0, verbose=0,
+    def __init__(self, data_shape, n_components=50, beta=2, n_iter=100,
+                 fixed_factors=None, verbose=0,
                  l_sparse=0., sparse_idx=None):
         self.data_shape = data_shape
         self.n_components = n_components
-        if buff_size > 0:
-            self.buff_size = buff_size
-        else:
-            self.buff_size = data_shape[1]
         self.n_components = np.asarray(n_components, dtype='int32')
         self.beta = theano.shared(np.asarray(beta, theano.config.floatX),
                                   name="beta")
@@ -73,9 +82,9 @@ class BetaNMF(object):
                                name="W", borrow=True, allow_downcast=True)
         self.h = theano.shared(fact_[0].astype(theano.config.floatX),
                                name="H", borrow=True, allow_downcast=True)
-        self.factors_ = [self.h, self.w]
-        self.x = theano.shared(np.zeros((data_shape)).astype(theano.config.floatX),
-                               name="X")
+        self.factors = [self.h, self.w]
+        self.x = theano.shared(
+          np.zeros((data_shape)).astype(theano.config.floatX), name="X")
 
         self.l_sparse = theano.shared(l_sparse, name="l_sparse")
         if self.l_sparse.get_value() > 0:
@@ -84,8 +93,6 @@ class BetaNMF(object):
             else:
                 self.sparse_idx = theano.shared(
                     sparse_idx, name="sparse_idx")
-
-
         self.get_updates_functions()
         self.get_div_function()
 
@@ -96,9 +103,6 @@ class BetaNMF(object):
         ----------
         X : ndarray with nonnegative entries
             The input array
-        W : ndarray
-            Optional ndarray that can be broadcasted with X and
-            gives weights to apply on the cost function
         """
 
         self.x.set_value(data.astype(theano.config.floatX))
@@ -129,7 +133,7 @@ class BetaNMF(object):
         print 'Done.'
 
     def get_div_function(self):
-        """ compile the theano-based divergence function"""
+        """Compile the theano-based divergence function"""
         self.div = theano.function(inputs=[],
                                    outputs=costs.beta_div(self.x,
                                                           self.w.T,
@@ -139,17 +143,17 @@ class BetaNMF(object):
                                    allow_input_downcast=True)
 
     def get_updates_functions(self):
-        """compile the theano based update functions"""
+        """Compile the theano based update functions"""
         print "Standard rules for beta-divergence"
         if self.l_sparse.get_value() == 0:
             h_update = updates.beta_H(self.x, self.w, self.h, self.beta)
         else:
             if self.sparse_idx is None:
                 h_update = updates.beta_H_Sparse(self.x,
-                                                      self.w,
-                                                      self.h,
-                                                      self.beta,
-                                                      self.l_sparse)
+                                                 self.w,
+                                                 self.h,
+                                                 self.beta,
+                                                 self.l_sparse)
             else:
                 h_update = updates.beta_H_groupSparse(self.x,
                                                       self.w,
@@ -171,5 +175,10 @@ class BetaNMF(object):
                                        allow_input_downcast=True)
 
     def score(self):
-        """Return factorisation score"""
+        """Compute factorisation score
+
+        Returns
+        -------
+        out : Float
+            factorisation score"""
         return self.div()

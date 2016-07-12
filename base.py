@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jun 12 09:16:22 2015
+base.py
+~~~~~~~
+.. topic:: Contents
 
-@author: serizel
-"""
+    The base module includes the basic functions such as
+    to load data, annotations, to normalize matrices
+    and generate nonnegative random matrices"""
 
 from sklearn import preprocessing
 import h5py
@@ -17,7 +20,28 @@ import theano
 
 def load_data(f_name, dataset, scale=True, rnd=False):
 
-    """Get data with labels,for a specific set."""
+    """Get data from from a specific set stored H5FS file.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    dataset : String
+        name of the set to load (e.g., train, dev, test)
+    scale : Boolean (default True)
+        scale data to unit variance (scikit-learn function)
+    rnd : Boolean (default True)
+        randomize the data along time axis
+
+
+    Returns
+    -------
+    data_dic : Dictionnary
+        dictionary containing the data
+
+        :data: numpy array
+
+            data matrix """
     data_file = h5py.File(f_name, 'r')
     data = data_file[('x_{0}').format(dataset)][:]
     data_file.close()
@@ -31,14 +55,39 @@ def load_data(f_name, dataset, scale=True, rnd=False):
     if rnd:
         print "Radomizing..."
         np.random.shuffle(data)
-
-    return dict(
+    data_dic = dict(
         x=data,
     )
+    return data_dic
 
 
 def load_all_data(f_name, scale=True, rnd=False):
-    """Get data with labels, split into training, validation and test set."""
+    """Get data from from all sets stored H5FS file.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    scale : Boolean (default True)
+        scale data to unit variance (scikit-learn function)
+    rnd : Boolean (default True)
+        randomize the data along time axis
+
+
+    Returns
+    -------
+    data_dic : Dictionnary
+        dictionary containing the data
+
+        :x_train: numpy array
+
+            train data matrix
+        :x_test: numpy array
+
+            test data matrix
+        :x_dev: numpy array
+
+            dev data matrix  """
     data_file = h5py.File(f_name, 'r')
     x_test = data_file['x_test'][:]
     x_dev = data_file['x_dev'][:]
@@ -58,40 +107,97 @@ def load_all_data(f_name, scale=True, rnd=False):
         print "Radomizing training set..."
         np.random.shuffle(x_train)
 
-    return dict(
+    data_dict = dict(
         x_train=x_train,
         x_test=x_test,
         x_dev=x_dev,
     )
+    return data_dict
 
 
 def load_labels(f_name, dataset):
-    """Get labels for a specific set."""
+    """Get labels for a specific set.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    dataset : String
+        name of the set to load (e.g., train, dev, test)
+
+
+    Returns
+    -------
+    lbl_dic : Dictionnary
+        dictionary containing the labels
+
+        :labels: numpy array
+
+            labels vector """
     data_file = h5py.File(f_name, 'r')
     labels = data_file[('y_{0}').format(dataset)][:]
     data_file.close()
     print "Total dataset size:"
     print "n samples: %d" % labels.shape[0]
-
-    return dict(
+    lbl_dict = dict(
         y=labels,
     )
+    return lbl_dict
 
 
 def load_fids(f_name, dataset):
-    """Get file ids for a specific set"""
+    """Get file ids for a specific set.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    dataset : String
+        name of the set to load (e.g., train, dev, test)
+
+
+    Returns
+    -------
+    fids_dic : Dictionnary
+        dictionary containing the files ids
+
+        :file_ids: numpy array
+
+            file ids vector """
     data_file = h5py.File(f_name, 'r')
     file_ids = data_file[('file {0}').format(dataset)][:]
     data_file.close()
     print "Total dataset size:"
     print "n samples: %d" % file_ids.shape[0]
-    return dict(
+    fids_dic = dict(
         f=file_ids,
     )
+    return fids_dic
 
 
 def load_all_labels(f_name):
-    """Get labels for all sets."""
+    """Get labels for all sets.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+
+
+    Returns
+    -------
+    lbl_dic : Dictionnary
+        dictionary containing the data
+
+        :y_train: numpy array
+
+            train labels vector
+        :y_test: numpy array
+
+            test labels vector
+        :y_dev: numpy array
+
+            dev labels vector  """
     data_file = h5py.File(f_name, 'r')
     y_test = data_file['y_test'][:]
     y_dev = data_file['y_dev'][:]
@@ -102,15 +208,37 @@ def load_all_labels(f_name):
     print "n test samples: %d" % y_test.shape[0]
     print "n dev samples: %d" % y_dev.shape[0]
 
-    return dict(
+    lbl_dic = dict(
         y_train=y_train,
         y_test=y_test,
         y_dev=y_dev,
     )
+    return lbl_dic
 
 
 def load_all_fids(f_name):
-    """Get file ids for all sets."""
+    """Get file ids for all sets.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+
+
+    Returns
+    -------
+    fids_dic : Dictionnary
+        dictionary containing the data
+
+        :f_train: numpy array
+
+            train file ids vector
+        :f_test: numpy array
+
+            test file ids vector
+        :f_dev: numpy array
+
+            dev file ids vector"""
     data_file = h5py.File(f_name, 'r')
     f_test = data_file['file test'][:]
     f_dev = data_file['file dev'][:]
@@ -121,15 +249,40 @@ def load_all_fids(f_name):
     print "n test samples: %d" % f_test.shape[0]
     print "n dev samples: %d" % f_dev.shape[0]
 
-    return dict(
+    fids_dic = dict(
         f_train=f_train,
         f_test=f_test,
         f_dev=f_dev,
     )
+    return fids_dic
 
 
 def load_data_labels(f_name, dataset, scale=True, rnd=False):
-    """Get data with labels, for a particular set."""
+    """Get data with labels, for a particular set.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    dataset : String
+        name of the set to load (e.g., train, dev, test)
+    scale : Boolean (default True)
+        scale data to unit variance (scikit-learn function)
+    rnd : Boolean (default True)
+        randomize the data along time axis
+
+
+    Returns
+    -------
+    data_dic : Dictionnary
+        dictionary containing the data
+
+        :x: numpy array
+
+            data matrix
+        :y: numpy array
+
+            labels vector"""
     data = load_data(f_name, dataset, scale)
     labels = load_labels(f_name, dataset)
     if rnd:
@@ -139,14 +292,49 @@ def load_data_labels(f_name, dataset, scale=True, rnd=False):
         data['x'] = data['x'][ind, ]
         labels['y'] = labels['y'][ind, ]
 
-    return dict(
+    data_dic = dict(
         x=data['x'],
         y=labels['y'],
     )
+    return data_dic
 
 
 def load_all_data_labels(f_name, scale=True, rnd=False):
-    """Get data with labels, for all sets."""
+    """Get data with labels, for all sets.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    scale : Boolean (default True)
+        scale data to unit variance (scikit-learn function)
+    rnd : Boolean (default True)
+        randomize the data along time axis
+
+
+    Returns
+    -------
+    data_dic : Dictionnary
+        dictionary containing the data
+
+        :x_train: numpy array
+
+            train data matrix
+        :x_test: numpy array
+
+            test data matrix
+        :x_dev: numpy array
+
+            dev data matrix
+        :y_train: numpy array
+
+            train labels vector
+        :y_test: numpy array
+
+            test labels vector
+        :y_dev: numpy array
+
+            dev labels vector"""
     data = load_all_data(f_name, scale)
     labels = load_all_labels(f_name)
     if rnd:
@@ -156,7 +344,7 @@ def load_all_data_labels(f_name, scale=True, rnd=False):
         data['x_train'] = data['x_train'][ind, ]
         labels['y_train'] = labels['y_train'][ind, ]
 
-    return dict(
+    data_dic = dict(
         x_train=data['x_train'],
         x_test=data['x_test'],
         x_dev=data['x_dev'],
@@ -164,10 +352,38 @@ def load_all_data_labels(f_name, scale=True, rnd=False):
         y_test=labels['y_test'],
         y_dev=labels['y_dev'],
     )
+    return data_dic
 
 
 def load_data_labels_fids(f_name, dataset, scale=True, rnd=False):
-    """Get data with labels and file ids for a specific set."""
+    """Get data with labels and file ids for a specific set.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    dataset : String
+        name of the set to load (e.g., train, dev, test)
+    scale : Boolean (default True)
+        scale data to unit variance (scikit-learn function)
+    rnd : Boolean (default True)
+        randomize the data along time axis
+
+
+    Returns
+    -------
+    data_dic : Dictionnary
+        dictionary containing the data
+
+        :x: numpy array
+
+            data matrix
+        :y: numpy array
+
+            labels vector
+        :f: numpy array
+
+            file ids vector"""
     data = load_data(f_name, dataset, scale)
     labels = load_labels(f_name, dataset)
     fids = load_fids(f_name, dataset)
@@ -179,15 +395,59 @@ def load_data_labels_fids(f_name, dataset, scale=True, rnd=False):
         labels['y'] = labels['y'][ind, ]
         fids['f'] = fids['f'][ind, ]
 
-    return dict(
+    data_dic = dict(
         x=data['x'],
         y=labels['y'],
         f=fids['f']
     )
+    return data_dic
 
 
 def load_all_data_labels_fids(f_name, scale=True, rnd=False):
-    """Get data with labels and file ids for all sets."""
+    """Get data with labels and file ids for all sets.
+
+    Parameters
+    ----------
+    f_name : String
+        file name
+    scale : Boolean (default True)
+        scale data to unit variance (scikit-learn function)
+    rnd : Boolean (default True)
+        randomize the data along time axis
+
+
+    Returns
+    -------
+    data_dic : Dictionnary
+        dictionary containing the data
+
+        :x_train: numpy array
+
+            train data matrix
+        :x_test: numpy array
+
+            test data matrix
+        :x_dev: numpy array
+
+            dev data matrix
+        :y_train: numpy array
+
+            train labels vector
+        :y_test: numpy array
+
+            test labels vector
+        :y_dev: numpy array
+
+            dev labels vector
+        :f_train: numpy array
+
+            train file ids vector
+        :f_test: numpy array
+
+            test file ids vector
+        :f_dev: numpy array
+
+            dev file ids vector"""
     data = load_all_data(f_name, scale)
     labels = load_all_labels(f_name)
     fids = load_all_fids(f_name)
@@ -199,7 +459,7 @@ def load_all_data_labels_fids(f_name, scale=True, rnd=False):
         labels['y_train'] = labels['y_train'][ind, ]
         fids['f'] = fids['f'][ind, ]
 
-    return dict(
+    data_dic = dict(
         x_train=data['x_train'],
         x_test=data['x_test'],
         x_dev=data['x_dev'],
@@ -210,6 +470,7 @@ def load_all_data_labels_fids(f_name, scale=True, rnd=False):
         f_test=fids['f_test'],
         f_dev=fids['f_dev'],
     )
+    return data_dic
 
 
 def nnrandn(shape):
@@ -219,6 +480,7 @@ def nnrandn(shape):
     ----------
     shape : tuple
         The shape
+
 
     Returns
     -------
@@ -235,19 +497,25 @@ def reorder_cls_ses(data, cls, ses, with_index=False):
     Parameters
     ----------
     data : array
+        the data
     cls : array
         the class labels for the data
     ses : array
         the session label for the data
+    with_index : Boolean (default False)
+        if True, the function returns the reordered indexes together
+        with data and labels
 
     Returns
     -------
-    data_ordered : array with the same shape as data
+    data : array with the same shape as data
         reordered data
-    cls_ordered : array with the same shape as cls
+    cls : array with the same shape as cls
         reordered class labels
-    ses_ordered : array with the same shape as ses
+    ses : array with the same shape as ses
         reordered session labels
+    ind : array with the same shape as data.shape[1]
+        reordered indexes (only if with_index==True)
     """
 
     data_ordered = np.zeros((data.shape))
@@ -294,15 +562,14 @@ def truncate(data, cls_label, ses_label, ind):
 
     Returns
     -------
-    data_trunc : array with the same shape as (ind[1]-ind[0], data.shape.[1])
+    data_trunc : array, same shape as (ind[1]-ind[0], data.shape.[1])
         truncateded data
-    cls_ordered : array with the same shape as (ind[1]-ind[0],
-                                                cls_label.shape.[1])
+    cls_ordered : array, same shape as (ind[1]-ind[0], cls_label.shape.[1])
         truncated class labels
-    ses_ordered : array with the same shape as (ind[1]-ind[0],
-                                                ses_label.shape.[1])
+    ses_ordered : array, same shape as (ind[1]-ind[0], ses_label.shape.[1])
         truncated session labels
-    """
+    ind : array
+        truncation indices"""
     newlen = np.sum(ind[:, 1]-ind[:, 0])
     data_trunc = np.zeros((newlen, data.shape[1]))
     cls_trunc = np.zeros((newlen,))
@@ -327,20 +594,21 @@ def truncate(data, cls_label, ses_label, ind):
 
 
 def norm_col(w, h):
-    """normalize the column vector w.
+    """normalize the column vector w (Theano function).
     Apply the invert normalization on h such that w.h does not change
+
     Parameters
     ----------
-    w: 1-dimensionnal array
+    w: Theano vector
         vector to be normalised
-    h: 1-dimensionnal array
+    h: Ttheano vector
         vector to be normalised by the invert normalistation
 
     Returns
     -------
-    w : array with the same shape as w
+    w : Theano vector with the same shape as w
         normalised vector (w/norm)
-    h : array with the same shape as h
+    h : Theano vector with the same shape as h
         h*norm
     """
     norm = w.norm(2, 0)
@@ -357,6 +625,7 @@ def norm_col(w, h):
 
 def get_norm_col(w):
     """returns the norm of a column vector
+
      Parameters
     ----------
     w: 1-dimensionnal array
