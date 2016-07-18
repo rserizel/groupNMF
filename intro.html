@@ -59,8 +59,8 @@
 <div class="section" id="nmf-with-divergence-and-multiplicative-updates">
 <h2>NMF with <span class="math">\(\beta\)</span> -divergence and multiplicative updates<a class="headerlink" href="#nmf-with-divergence-and-multiplicative-updates" title="Permalink to this headline">¶</a></h2>
 <p>Consider the (nonnegative) matrix <span class="math">\(\textbf{V}\in\mathbb{R}_+^{F\times N}\)</span>. The goal of NMF <a class="footnote-reference" href="#id21" id="id4">[4]</a> is to find a factorisation for <span class="math">\(\textbf{V}\)</span> of the form:</p>
-<div class="math">
-\[\textbf{V} \approx \textbf{W}\textbf{H} .. _nmf:\]</div>
+<div class="math" id="equation-nmf">
+<span class="eqno">(1)</span>\[\textbf{V} \approx \textbf{W}\textbf{H}\]</div>
 <p>where <span class="math">\(\textbf{W}\in\mathbb{R}_+^{F\times K}\)</span> , <span class="math">\(\textbf{H}\in\mathbb{R}_+^{K\times N}\)</span> and <span class="math">\(K\)</span> is the number of components in the decomposition. The NMF model estimation is usually considered as solving the following optimisation problem:</p>
 <div class="math">
 \[\min_{\textbf{W}\textbf{H}}D(\textbf{V} | \textbf{W}\textbf{H})\quad\mathrm{s.t.}\quad\textbf{W}\geq 0,\ \textbf{H}\geq 0\mathrm{.}\]</div>
@@ -75,14 +75,13 @@
 x\log\frac{x}{y} - x + y&amp;\beta=1\nonumber\\
 \frac{x}{y} -\log\frac{x}{y} - 1&amp;\beta=0\nonumber\textrm{.}
 \end{cases}\end{split}\]</div>
-<p>Popular cost functions such as the Euclidean distance, the generalised KL divergence <a class="footnote-reference" href="#id25" id="id8">[8]</a> and the IS divergence <a class="footnote-reference" href="#id26" id="id9">[9]</a> and all particular cases of the <span class="math">\(\beta$-divergence (obtained for :math:\)</span>beta=2` , <span class="math">\(1\)</span> and <span class="math">\(0\)</span>, respectively). The use of the <span class="math">\(\beta\)</span> -divergence for NMF has been studied extensively in Févotte et al. <a class="footnote-reference" href="#id27" id="id10">[10]</a>.  In most cases NMF problem is solved using a two-block coordinate descent approach. Each of the factors <span class="math">\(\textbf{W}\)</span> and <span class="math">\(\textbf{H}\)</span> is optimised alternatively. The sub-problem in one factor can then be considered as a nonnegative least square problem (NNLS) <a class="footnote-reference" href="#id28" id="id11">[11]</a>. The approach implemented here to solve these NNLS problems relies on the multiplicative update rules introduced in Lee et al. <a class="footnote-reference" href="#id21" id="id12">[4]</a> for the Euclidean distance and later generalised to the the <span class="math">\(\beta\)</span> -divergence <a class="footnote-reference" href="#id27" id="id13">[10]</a> :</p>
-<div class="math">
-\[\begin{split}\begin{align}
-\textbf{H}&amp;\gets \textbf{H}\odot\frac{\textbf{W}^T\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]}
-{\textbf{W}^T(\textbf{W}\textbf{H})^{\beta-1}}_upH\\
-\textbf{W}&amp;\gets \textbf{W}\odot\frac{\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]\textbf{H}^T }
-{(\textbf{W}\textbf{H})^{\beta-1}\textbf{H}^T}\mathrm{;}\label{upW}
-\end{align}\end{split}\]</div>
+<p>Popular cost functions such as the Euclidean distance, the generalised KL divergence <a class="footnote-reference" href="#id25" id="id8">[8]</a> and the IS divergence <a class="footnote-reference" href="#id26" id="id9">[9]</a> and all particular cases of the <span class="math">\(\beta$-divergence\)</span> (obtained for <span class="math">\(\beta=2\)</span> , <span class="math">\(1\)</span> and <span class="math">\(0\)</span>, respectively). The use of the <span class="math">\(\beta\)</span> -divergence for NMF has been studied extensively in Févotte et al. <a class="footnote-reference" href="#id27" id="id10">[10]</a>.  In most cases NMF problem is solved using a two-block coordinate descent approach. Each of the factors <span class="math">\(\textbf{W}\)</span> and <span class="math">\(\textbf{H}\)</span> is optimised alternatively. The sub-problem in one factor can then be considered as a nonnegative least square problem (NNLS) <a class="footnote-reference" href="#id28" id="id11">[11]</a>. The approach implemented here to solve these NNLS problems relies on the multiplicative update rules introduced in Lee et al. <a class="footnote-reference" href="#id21" id="id12">[4]</a> for the Euclidean distance and later generalised to the the <span class="math">\(\beta\)</span> -divergence <a class="footnote-reference" href="#id27" id="id13">[10]</a> :</p>
+<div class="math" id="equation-upH">
+<span class="eqno">(2)</span>\[\textbf{H}\gets \textbf{H}\odot\frac{\textbf{W}^T\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]}
+{\textbf{W}^T(\textbf{W}\textbf{H})^{\beta-1}}\]</div>
+<div class="math" id="equation-upW">
+<span class="eqno">(3)</span>\[\textbf{W}\gets \textbf{W}\odot\frac{\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]\textbf{H}^T }
+{(\textbf{W}\textbf{H})^{\beta-1}\textbf{H}^T}\mathrm{;}\]</div>
 <p>where <span class="math">\(\odot\)</span> is the element-wise product (Hadamard product) and division and power are element-wise. The matrices <span class="math">\(\textbf{H}\)</span> and <span class="math">\(\textbf{W}\)</span> are then updated according to an alternating update scheme.</p>
 </div>
 <div class="section" id="group-nmf-with-class-and-session-similarity-constraints">
@@ -90,40 +89,40 @@ x\log\frac{x}{y} - x + y&amp;\beta=1\nonumber\\
 <p>In the approach presented above, the matrix factorisation is totally unsupervised and does not account for class variability or session variability. The approach introduced in Serizel <em>et al.</em> <a class="footnote-reference" href="#id18" id="id14">[1]</a> intends to take these variabilities into account. It derives from group-NMF <a class="footnote-reference" href="#id19" id="id15">[2]</a> and is inspired by exemplar-based approaches for the speaker identification problem <a class="footnote-reference" href="#id29" id="id16">[12]</a>.</p>
 <div class="section" id="nmf-on-speaker-utterances-for-speaker-identification">
 <h3>NMF on speaker utterances for speaker identification<a class="headerlink" href="#nmf-on-speaker-utterances-for-speaker-identification" title="Permalink to this headline">¶</a></h3>
-<p>In order to better model speaker identity, we now consider the portion of <span class="math">\(\textbf{V}\)</span> recorded in a session <span class="math">\(s\)</span> in which only the speaker <span class="math">\(c\)</span> is active. This is denoted by <span class="math">\(\textbf{V}^{(cs)}\)</span>, its length is <span class="math">\(N^{(cs)}\)</span> and it can be decomposed according to <a href="#id30"><span class="problematic" id="id31">nmf_</span></a>:</p>
+<p>In order to better model speaker identity, we now consider the portion of <span class="math">\(\textbf{V}\)</span> recorded in a session <span class="math">\(s\)</span> in which only the speaker <span class="math">\(c\)</span> is active. This is denoted by <span class="math">\(\textbf{V}^{(cs)}\)</span>, its length is <span class="math">\(N^{(cs)}\)</span> and it can be decomposed according to <a href="#equation-nmf">(1)</a>:</p>
 <div class="math">
 \[\textbf{V}^{(cs)} \approx \textbf{W}^{(cs)} \textbf{H}^{(cs)}\quad \forall\ (c,s) \in\mathcal{C}\times\mathcal{S}_c\nonumber\]</div>
 <p>under nonnegative constraints.</p>
 <p>We define a global cost function which is the sum of all local divergences:</p>
-<div class="math">
-\[J_{\mathrm{global}} = \sum\limits_{c = 1}^{C}\sum\limits_{s\in\mathcal{S}_c} D_{KL}(\textbf{V}^{(cs)} | \textbf{W}^{(cs)} \textbf{H}^{(cs)})\mathrm{.}\label{beta_glob}\]</div>
-<p>Each <span class="math">\(\textbf{V}^{(cs)}\)</span> can be decomposed independently with standard multiplicative rules (ref{upH}, ref{upW}). The bases learnt on the training set are then concatenated to form a global basis. The latter basis is then used to produce features on test sets.</p>
+<div class="math" id="equation-beta_glob">
+<span class="eqno">(4)</span>\[J_{\mathrm{global}} = \sum\limits_{c = 1}^{C}\sum\limits_{s\in\mathcal{S}_c} D_{KL}(\textbf{V}^{(cs)} | \textbf{W}^{(cs)} \textbf{H}^{(cs)})\mathrm{.}\]</div>
+<p>Each <span class="math">\(\textbf{V}^{(cs)}\)</span> can be decomposed independently with standard multiplicative rules (<a href="#equation-upH">(2)</a>, <a href="#equation-upW">(3)</a>). The bases learnt on the training set are then concatenated to form a global basis. The latter basis is then used to produce features on test sets.</p>
 </div>
 <div class="section" id="class-and-session-similarity-constraints">
 <h3>Class and session similarity constraints<a class="headerlink" href="#class-and-session-similarity-constraints" title="Permalink to this headline">¶</a></h3>
 <p>In order to take the session and speaker variabilities into account we propose to further decompose the dictionaries <span class="math">\(\textbf{W}\)</span> similarly as what was proposed by Lee et al. <a class="footnote-reference" href="#id21" id="id17">[4]</a>. The matrix <span class="math">\(\textbf{W}^{(cs)}\)</span> can indeed be arbitrarily decomposed as follows:</p>
 <div class="math">
-\[\textbf{W}^{(cs)} = \left[\right.\underset{\leftarrow K_{\mathrm{SPK}}\rightarrow} {\textbf{W}^{(cs)}_{\mathrm{SPK}}}|\underset{\leftarrow K_{\mathrm{SES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{SES}}}|\underset{\leftarrow K_{\mathrm{RES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{RES}}}\left.\right]\nonumber\]</div>
+\[\textbf{W}^{(cs)} = \left[\right.\underset{\leftarrow K_{\mathrm{SPK}}\rightarrow} {\textbf{W}^{(cs)}_{\mathrm{SPK}}}|\underset{\leftarrow K_{\mathrm{SES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{SES}}}|\underset{\leftarrow K_{\mathrm{RES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{RES}}}\left.\right]\]</div>
 <p>with <span class="math">\(K_{\mathrm{SPK}} + K_{\mathrm{SES}} + K_{\mathrm{RES}} = K\)</span> and where <span class="math">\(K_{\mathrm{SPK}}\)</span>, <span class="math">\(K_{\mathrm{SES}}\)</span> and <span class="math">\(K_{\mathrm{RES}}\)</span> are the number of components in the speaker-dependent bases, the session-dependent bases and the residual bases, respectively.</p>
 <p>The first target is to capture speaker variability. This is related to finding vectors for the speaker bases (<span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SPK}}\)</span>) for each speaker <span class="math">\(c\)</span> that are as close as possible across all the sessions in which the speaker is present, leading to the constraint:</p>
-<div class="math">
-\[\begin{split}J_{\mathrm{SPK}} = \frac{1}{2}\sum\limits_{c=1}^{C}\sum\limits_{s\in\mathcal{S}_c}\sum\limits_{\substack{s_1\in\mathcal{S}_c  \\s_1 \neq s}} \|  \textbf{W}^{(cs)}_{\mathrm{SPK}} -  \textbf{W}^{(cs_1)}_{\mathrm{SPK}}\|^2 &lt; \alpha_1\end{split}\]</div>
+<div class="math" id="equation-cst_spk">
+<span class="eqno">(5)</span>\[\begin{split}J_{\mathrm{SPK}} = \frac{1}{2}\sum\limits_{c=1}^{C}\sum\limits_{s\in\mathcal{S}_c}\sum\limits_{\substack{s_1\in\mathcal{S}_c  \\s_1 \neq s}} \|  \textbf{W}^{(cs)}_{\mathrm{SPK}} -  \textbf{W}^{(cs_1)}_{\mathrm{SPK}}\|^2 &lt; \alpha_1\end{split}\]</div>
 <p>with <span class="math">\(\|.\|^2\)</span> the Euclidean distance and <span class="math">\(\alpha_1\)</span> is the similarity constraint on speaker-dependent bases.</p>
 <p>The second target is to capture session variability. This can be accounted for by finding vectors for the sessions bases (<span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SES}}\)</span>) for each session <span class="math">\(s\)</span> that are as close as possible across all the speakers that speak in the session, leading to the constraint:</p>
-<div class="math">
-\[\begin{split}J_{\mathrm{SES}} = \frac{1}{2}\sum\limits_{s=1}^{S}\sum\limits_{c\in\mathcal{C}_s}\sum\limits_{\substack{c_1\in\mathcal{C}_s  \\c_1 \neq c}} \|  \textbf{W}^{(cs)}_{\mathrm{SES}} -  \textbf{W}^{(c_1s)}_{\mathrm{SES}}\|^2 &lt; \alpha_2\end{split}\]</div>
+<div class="math" id="equation-cst_ses">
+<span class="eqno">(6)</span>\[\begin{split}J_{\mathrm{SES}} = \frac{1}{2}\sum\limits_{s=1}^{S}\sum\limits_{c\in\mathcal{C}_s}\sum\limits_{\substack{c_1\in\mathcal{C}_s  \\c_1 \neq c}} \|  \textbf{W}^{(cs)}_{\mathrm{SES}} -  \textbf{W}^{(c_1s)}_{\mathrm{SES}}\|^2 &lt; \alpha_2\end{split}\]</div>
 <p>where <span class="math">\(\alpha_2\)</span> is the similarity constraint on session-dependent bases.</p>
 <p>The vectors composing the residual bases <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{RES}}\)</span> are left unconstrained to represent characteristics that depend neither on the speaker nor on the session.</p>
-<p>Minimizing the global divergence~eqref{beta_glob} subject to constraints~eqref{cst_spk} and eqref{cst_ses} is equivalent to the following problem:</p>
-<div class="math">
-\[\min\limits_{\textbf{W},\textbf{H}} J_{\mathrm{global}} + \lambda_1 J_{\mathrm{SPK}} + \lambda_2 J_{\mathrm{SES}}\quad\mathrm{s.t.} \quad\textbf{W}\geq 0,\ \textbf{H}\geq 0\]</div>
+<p>Minimizing the global divergence <a href="#equation-beta_glob">(4)</a> subject to constraints <a href="#equation-cst_spk">(5)</a> and <a href="#equation-cst_ses">(6)</a> is equivalent to the following problem:</p>
+<div class="math" id="equation-cost">
+<span class="eqno">(7)</span>\[\min\limits_{\textbf{W},\textbf{H}} J_{\mathrm{global}} + \lambda_1 J_{\mathrm{SPK}} + \lambda_2 J_{\mathrm{SES}}\quad\mathrm{s.t.} \quad\textbf{W}\geq 0,\ \textbf{H}\geq 0\]</div>
 <p>which in turn leads to the multiplicative update rules for the dictionaries <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SPK}}\)</span> and <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SES}}\)</span>:</p>
 <div class="math">
 \[\begin{split}\textbf{W}_{\mathrm{SPK}}^{(cs)}&amp;\leftarrow \textbf{W}_{\mathrm{SPK}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2}\sum\limits_{\substack{s_1\in\mathcal{S}_c\\s_1\neq s}}\textbf{W}_{\mathrm{SPK}}^{(cs_1)}}
 {\textbf{1}{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2} \left(\mathrm{Card}(\mathcal{S}_c) - 1\right)\textbf{W}_{\mathrm{SPK}}^{(cs)}}\\
-\label{gUP2}\textbf{W}_{\mathrm{SES}}^{(cs)}&amp;\leftarrow \textbf{W}_{\mathrm{SES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2}\sum\limits_{\substack{c_1\in\mathcal{C}_s\\c_1\neq c}}\textbf{W}_{\mathrm{SES}}^{(c_1s)}}
+\textbf{W}_{\mathrm{SES}}^{(cs)}&amp;\leftarrow \textbf{W}_{\mathrm{SES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2}\sum\limits_{\substack{c_1\in\mathcal{C}_s\\c_1\neq c}}\textbf{W}_{\mathrm{SES}}^{(c_1s)}}
 {\textbf{1}{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2} \left(\mathrm{Card}(\mathcal{C}_s) - 1\right)\textbf{W}_{\mathrm{SES}}^{(cs)}}\end{split}\]</div>
-<p>We obtained these update rules using the well know heuristic which consists in expressing the gradient of the cost function~eqref{cost} as the difference between a positive contribution and a negative contribution. The multiplicative update then has the form of a quotient of the negative contribution by the positive contribution. The update rules for <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{RES}}\)</span> are similar to the standard rules:</p>
+<p>We obtained these update rules using the well know heuristic which consists in expressing the gradient of the cost function <a href="#equation-cost">(7)</a> as the difference between a positive contribution and a negative contribution. The multiplicative update then has the form of a quotient of the negative contribution by the positive contribution. The update rules for <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{RES}}\)</span> are similar to the standard rules:</p>
 <div class="math">
 \[\textbf{W}_{\mathrm{RES}}^{(cs)}\leftarrow \textbf{W}_{\mathrm{RES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T }{\textbf{1}{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T}\mathrm{.}\nonumber\]</div>
 <p>Note that the update rules for the activations (<span class="math">\(\textbf{H}^{(cs)}\)</span>) are left unchanged.</p>

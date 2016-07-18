@@ -8,7 +8,8 @@ NMF with :math:`\beta` -divergence and multiplicative updates
 Consider the (nonnegative) matrix :math:`\textbf{V}\in\mathbb{R}_+^{F\times N}`. The goal of NMF [4]_ is to find a factorisation for :math:`\textbf{V}` of the form:
 
 .. math::
-	\textbf{V} \approx \textbf{W}\textbf{H} .. _nmf:
+	\textbf{V} \approx \textbf{W}\textbf{H} 
+	:label: nmf
 
 where :math:`\textbf{W}\in\mathbb{R}_+^{F\times K}` , :math:`\textbf{H}\in\mathbb{R}_+^{K\times N}` and :math:`K` is the number of components in the decomposition. The NMF model estimation is usually considered as solving the following optimisation problem:
 
@@ -30,15 +31,17 @@ with :math:`[.]_{fn}` is the element on column :math:`n` and line :math:`f` of a
  	\frac{x}{y} -\log\frac{x}{y} - 1&\beta=0\nonumber\textrm{.}
  	\end{cases}
 
-Popular cost functions such as the Euclidean distance, the generalised KL divergence [8]_ and the IS divergence [9]_ and all particular cases of the :math:`\beta$-divergence (obtained for :math:`\beta=2` , :math:`1` and :math:`0`, respectively). The use of the :math:`\beta` -divergence for NMF has been studied extensively in Févotte et al. [10]_.  In most cases NMF problem is solved using a two-block coordinate descent approach. Each of the factors :math:`\textbf{W}` and :math:`\textbf{H}` is optimised alternatively. The sub-problem in one factor can then be considered as a nonnegative least square problem (NNLS) [11]_. The approach implemented here to solve these NNLS problems relies on the multiplicative update rules introduced in Lee et al. [4]_ for the Euclidean distance and later generalised to the the :math:`\beta` -divergence [10]_ :
+Popular cost functions such as the Euclidean distance, the generalised KL divergence [8]_ and the IS divergence [9]_ and all particular cases of the :math:`\beta$-divergence` (obtained for :math:`\beta=2` , :math:`1` and :math:`0`, respectively). The use of the :math:`\beta` -divergence for NMF has been studied extensively in Févotte et al. [10]_.  In most cases NMF problem is solved using a two-block coordinate descent approach. Each of the factors :math:`\textbf{W}` and :math:`\textbf{H}` is optimised alternatively. The sub-problem in one factor can then be considered as a nonnegative least square problem (NNLS) [11]_. The approach implemented here to solve these NNLS problems relies on the multiplicative update rules introduced in Lee et al. [4]_ for the Euclidean distance and later generalised to the the :math:`\beta` -divergence [10]_ :
 
 .. math::
-	\begin{align}
-	\textbf{H}&\gets \textbf{H}\odot\frac{\textbf{W}^T\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]}
-	{\textbf{W}^T(\textbf{W}\textbf{H})^{\beta-1}}_upH\\
-	\textbf{W}&\gets \textbf{W}\odot\frac{\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]\textbf{H}^T }
-	{(\textbf{W}\textbf{H})^{\beta-1}\textbf{H}^T}\mathrm{;}\label{upW}
-	\end{align}
+	\textbf{H}\gets \textbf{H}\odot\frac{\textbf{W}^T\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]}
+	{\textbf{W}^T(\textbf{W}\textbf{H})^{\beta-1}}
+	:label: upH
+.. math::
+	\textbf{W}\gets \textbf{W}\odot\frac{\left[(\textbf{W}\textbf{H})^{\beta-2}\odot\textbf{V}\right]\textbf{H}^T }
+	{(\textbf{W}\textbf{H})^{\beta-1}\textbf{H}^T}\mathrm{;}
+	:label: upW
+
 
 where :math:`\odot` is the element-wise product (Hadamard product) and division and power are element-wise. The matrices :math:`\textbf{H}` and :math:`\textbf{W}` are then updated according to an alternating update scheme.
 
@@ -50,7 +53,7 @@ In the approach presented above, the matrix factorisation is totally unsupervise
 NMF on speaker utterances for speaker identification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to better model speaker identity, we now consider the portion of :math:`\textbf{V}` recorded in a session :math:`s` in which only the speaker :math:`c` is active. This is denoted by :math:`\textbf{V}^{(cs)}`, its length is :math:`N^{(cs)}` and it can be decomposed according to nmf_:
+In order to better model speaker identity, we now consider the portion of :math:`\textbf{V}` recorded in a session :math:`s` in which only the speaker :math:`c` is active. This is denoted by :math:`\textbf{V}^{(cs)}`, its length is :math:`N^{(cs)}` and it can be decomposed according to :eq:`nmf`:
 
 .. math::
 	\textbf{V}^{(cs)} \approx \textbf{W}^{(cs)} \textbf{H}^{(cs)}\quad \forall\ (c,s) \in\mathcal{C}\times\mathcal{S}_c\nonumber
@@ -60,10 +63,11 @@ under nonnegative constraints.
 We define a global cost function which is the sum of all local divergences:
 
 .. math::
-	J_{\mathrm{global}} = \sum\limits_{c = 1}^{C}\sum\limits_{s\in\mathcal{S}_c} D_{KL}(\textbf{V}^{(cs)} | \textbf{W}^{(cs)} \textbf{H}^{(cs)})\mathrm{.}\label{beta_glob}
+	J_{\mathrm{global}} = \sum\limits_{c = 1}^{C}\sum\limits_{s\in\mathcal{S}_c} D_{KL}(\textbf{V}^{(cs)} | \textbf{W}^{(cs)} \textbf{H}^{(cs)})\mathrm{.}
+	:label: beta_glob
 
 
-Each :math:`\textbf{V}^{(cs)}` can be decomposed independently with standard multiplicative rules (\ref{upH}, \ref{upW}). The bases learnt on the training set are then concatenated to form a global basis. The latter basis is then used to produce features on test sets.
+Each :math:`\textbf{V}^{(cs)}` can be decomposed independently with standard multiplicative rules (:eq:`upH`, :eq:`upW`). The bases learnt on the training set are then concatenated to form a global basis. The latter basis is then used to produce features on test sets.
 
 Class and session similarity constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,7 +75,7 @@ Class and session similarity constraints
 In order to take the session and speaker variabilities into account we propose to further decompose the dictionaries :math:`\textbf{W}` similarly as what was proposed by Lee et al. [4]_. The matrix :math:`\textbf{W}^{(cs)}` can indeed be arbitrarily decomposed as follows:
 
 .. math::
-	\textbf{W}^{(cs)} = \left[\right.\underset{\leftarrow K_{\mathrm{SPK}}\rightarrow} {\textbf{W}^{(cs)}_{\mathrm{SPK}}}|\underset{\leftarrow K_{\mathrm{SES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{SES}}}|\underset{\leftarrow K_{\mathrm{RES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{RES}}}\left.\right]\nonumber
+	\textbf{W}^{(cs)} = \left[\right.\underset{\leftarrow K_{\mathrm{SPK}}\rightarrow} {\textbf{W}^{(cs)}_{\mathrm{SPK}}}|\underset{\leftarrow K_{\mathrm{SES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{SES}}}|\underset{\leftarrow K_{\mathrm{RES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{RES}}}\left.\right]
 
 with :math:`K_{\mathrm{SPK}} + K_{\mathrm{SES}} + K_{\mathrm{RES}} = K` and where :math:`K_{\mathrm{SPK}}`, :math:`K_{\mathrm{SES}}` and :math:`K_{\mathrm{RES}}` are the number of components in the speaker-dependent bases, the session-dependent bases and the residual bases, respectively. 
 
@@ -79,6 +83,7 @@ The first target is to capture speaker variability. This is related to finding v
 
 .. math::
 	J_{\mathrm{SPK}} = \frac{1}{2}\sum\limits_{c=1}^{C}\sum\limits_{s\in\mathcal{S}_c}\sum\limits_{\substack{s_1\in\mathcal{S}_c  \\s_1 \neq s}} \|  \textbf{W}^{(cs)}_{\mathrm{SPK}} -  \textbf{W}^{(cs_1)}_{\mathrm{SPK}}\|^2 < \alpha_1
+	:label: cst_spk
 
 with :math:`\|.\|^2` the Euclidean distance and :math:`\alpha_1` is the similarity constraint on speaker-dependent bases.
 
@@ -86,26 +91,28 @@ The second target is to capture session variability. This can be accounted for b
 
 .. math::
 	J_{\mathrm{SES}} = \frac{1}{2}\sum\limits_{s=1}^{S}\sum\limits_{c\in\mathcal{C}_s}\sum\limits_{\substack{c_1\in\mathcal{C}_s  \\c_1 \neq c}} \|  \textbf{W}^{(cs)}_{\mathrm{SES}} -  \textbf{W}^{(c_1s)}_{\mathrm{SES}}\|^2 < \alpha_2
+	:label: cst_ses
 
 where :math:`\alpha_2` is the similarity constraint on session-dependent bases.
 
 The vectors composing the residual bases :math:`\textbf{W}^{(cs)}_{\mathrm{RES}}` are left unconstrained to represent characteristics that depend neither on the speaker nor on the session.
 
-Minimizing the global divergence~\eqref{beta_glob} subject to constraints~\eqref{cst_spk} and \eqref{cst_ses} is equivalent to the following problem:
+Minimizing the global divergence :eq:`beta_glob` subject to constraints :eq:`cst_spk` and :eq:`cst_ses` is equivalent to the following problem:
 
 .. math::
 	\min\limits_{\textbf{W},\textbf{H}} J_{\mathrm{global}} + \lambda_1 J_{\mathrm{SPK}} + \lambda_2 J_{\mathrm{SES}}\quad\mathrm{s.t.} \quad\textbf{W}\geq 0,\ \textbf{H}\geq 0
+	:label: cost
 
 which in turn leads to the multiplicative update rules for the dictionaries :math:`\textbf{W}^{(cs)}_{\mathrm{SPK}}` and :math:`\textbf{W}^{(cs)}_{\mathrm{SES}}`:
 
 .. math::
 	\textbf{W}_{\mathrm{SPK}}^{(cs)}&\leftarrow \textbf{W}_{\mathrm{SPK}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2}\sum\limits_{\substack{s_1\in\mathcal{S}_c\\s_1\neq s}}\textbf{W}_{\mathrm{SPK}}^{(cs_1)}}
 	{\textbf{1}{\textbf{H}_{\mathrm{SPK}}^{(cs)}}^T + \frac{\lambda_1}{2} \left(\mathrm{Card}(\mathcal{S}_c) - 1\right)\textbf{W}_{\mathrm{SPK}}^{(cs)}}\\
-	\label{gUP2}\textbf{W}_{\mathrm{SES}}^{(cs)}&\leftarrow \textbf{W}_{\mathrm{SES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2}\sum\limits_{\substack{c_1\in\mathcal{C}_s\\c_1\neq c}}\textbf{W}_{\mathrm{SES}}^{(c_1s)}}
+	\textbf{W}_{\mathrm{SES}}^{(cs)}&\leftarrow \textbf{W}_{\mathrm{SES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2}\sum\limits_{\substack{c_1\in\mathcal{C}_s\\c_1\neq c}}\textbf{W}_{\mathrm{SES}}^{(c_1s)}}
 	{\textbf{1}{\textbf{H}_{\mathrm{SES}}^{(cs)}}^T + \frac{\lambda_2}{2} \left(\mathrm{Card}(\mathcal{C}_s) - 1\right)\textbf{W}_{\mathrm{SES}}^{(cs)}}
 
 
-We obtained these update rules using the well know heuristic which consists in expressing the gradient of the cost function~\eqref{cost} as the difference between a positive contribution and a negative contribution. The multiplicative update then has the form of a quotient of the negative contribution by the positive contribution. The update rules for :math:`\textbf{W}^{(cs)}_{\mathrm{RES}}` are similar to the standard rules:
+We obtained these update rules using the well know heuristic which consists in expressing the gradient of the cost function :eq:`cost` as the difference between a positive contribution and a negative contribution. The multiplicative update then has the form of a quotient of the negative contribution by the positive contribution. The update rules for :math:`\textbf{W}^{(cs)}_{\mathrm{RES}}` are similar to the standard rules:
 
 .. math::
 	\textbf{W}_{\mathrm{RES}}^{(cs)}\leftarrow \textbf{W}_{\mathrm{RES}}^{(cs)}\odot\frac{\left[(\textbf{W}^{(cs)}\textbf{H}^{(cs)})^{-1}\odot\textbf{V}^{(cs)}\right]{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T }{\textbf{1}{\textbf{H}_{\mathrm{RES}}^{(cs)}}^T}\mathrm{.}\nonumber
