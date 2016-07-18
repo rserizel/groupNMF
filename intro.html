@@ -93,6 +93,10 @@ x\log\frac{x}{y} - x + y&amp;\beta=1\nonumber\\
 <div class="math">
 \[\textbf{V}^{(cs)} \approx \textbf{W}^{(cs)} \textbf{H}^{(cs)}\quad \forall\ (c,s) \in\mathcal{C}\times\mathcal{S}_c\nonumber\]</div>
 <p>under nonnegative constraints.</p>
+<div class="figure align-center" id="id30">
+<a class="reference internal image-reference" href="_images/NMFutt.png"><img alt="_images/NMFutt.png" src="_images/NMFutt.png" style="width: 764.4px; height: 239.4px;" /></a>
+<p class="caption"><span class="caption-text"><strong>Fig. 1</strong> NMF on speaker utterances</span></p>
+</div>
 <p>We define a global cost function which is the sum of all local divergences:</p>
 <div class="math" id="equation-beta_glob">
 <span class="eqno">(4)</span>\[J_{\mathrm{global}} = \sum\limits_{c = 1}^{C}\sum\limits_{s\in\mathcal{S}_c} D_{KL}(\textbf{V}^{(cs)} | \textbf{W}^{(cs)} \textbf{H}^{(cs)})\mathrm{.}\]</div>
@@ -104,14 +108,26 @@ x\log\frac{x}{y} - x + y&amp;\beta=1\nonumber\\
 <div class="math">
 \[\textbf{W}^{(cs)} = \left[\right.\underset{\leftarrow K_{\mathrm{SPK}}\rightarrow} {\textbf{W}^{(cs)}_{\mathrm{SPK}}}|\underset{\leftarrow K_{\mathrm{SES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{SES}}}|\underset{\leftarrow K_{\mathrm{RES}}\rightarrow}{\textbf{W}^{(cs)}_{\mathrm{RES}}}\left.\right]\]</div>
 <p>with <span class="math">\(K_{\mathrm{SPK}} + K_{\mathrm{SES}} + K_{\mathrm{RES}} = K\)</span> and where <span class="math">\(K_{\mathrm{SPK}}\)</span>, <span class="math">\(K_{\mathrm{SES}}\)</span> and <span class="math">\(K_{\mathrm{RES}}\)</span> are the number of components in the speaker-dependent bases, the session-dependent bases and the residual bases, respectively.</p>
+<div class="figure align-center" id="id31">
+<a class="reference internal image-reference" href="_images/clssesres.png"><img alt="_images/clssesres.png" src="_images/clssesres.png" style="width: 761.4px; height: 229.8px;" /></a>
+<p class="caption"><span class="caption-text"><strong>Fig. 2</strong> Basis decomposition into <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SPK}}\)</span>, <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SES}}\)</span> and <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{RES}}\)</span></span></p>
+</div>
 <p>The first target is to capture speaker variability. This is related to finding vectors for the speaker bases (<span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SPK}}\)</span>) for each speaker <span class="math">\(c\)</span> that are as close as possible across all the sessions in which the speaker is present, leading to the constraint:</p>
 <div class="math" id="equation-cst_spk">
 <span class="eqno">(5)</span>\[\begin{split}J_{\mathrm{SPK}} = \frac{1}{2}\sum\limits_{c=1}^{C}\sum\limits_{s\in\mathcal{S}_c}\sum\limits_{\substack{s_1\in\mathcal{S}_c  \\s_1 \neq s}} \|  \textbf{W}^{(cs)}_{\mathrm{SPK}} -  \textbf{W}^{(cs_1)}_{\mathrm{SPK}}\|^2 &lt; \alpha_1\end{split}\]</div>
 <p>with <span class="math">\(\|.\|^2\)</span> the Euclidean distance and <span class="math">\(\alpha_1\)</span> is the similarity constraint on speaker-dependent bases.</p>
+<div class="figure align-center" id="id32">
+<a class="reference internal image-reference" href="_images/clscst.png"><img alt="_images/clscst.png" src="_images/clscst.png" style="width: 741.0px; height: 237.0px;" /></a>
+<p class="caption"><span class="caption-text"><strong>Fig. 3</strong> Speaker similarity constraint</span></p>
+</div>
 <p>The second target is to capture session variability. This can be accounted for by finding vectors for the sessions bases (<span class="math">\(\textbf{W}^{(cs)}_{\mathrm{SES}}\)</span>) for each session <span class="math">\(s\)</span> that are as close as possible across all the speakers that speak in the session, leading to the constraint:</p>
 <div class="math" id="equation-cst_ses">
 <span class="eqno">(6)</span>\[\begin{split}J_{\mathrm{SES}} = \frac{1}{2}\sum\limits_{s=1}^{S}\sum\limits_{c\in\mathcal{C}_s}\sum\limits_{\substack{c_1\in\mathcal{C}_s  \\c_1 \neq c}} \|  \textbf{W}^{(cs)}_{\mathrm{SES}} -  \textbf{W}^{(c_1s)}_{\mathrm{SES}}\|^2 &lt; \alpha_2\end{split}\]</div>
 <p>where <span class="math">\(\alpha_2\)</span> is the similarity constraint on session-dependent bases.</p>
+<div class="figure align-center" id="id33">
+<a class="reference internal image-reference" href="_images/sescst.png"><img alt="_images/sescst.png" src="_images/sescst.png" style="width: 756.0px; height: 237.0px;" /></a>
+<p class="caption"><span class="caption-text"><strong>Fig. 3</strong> Session similarity constraint</span></p>
+</div>
 <p>The vectors composing the residual bases <span class="math">\(\textbf{W}^{(cs)}_{\mathrm{RES}}\)</span> are left unconstrained to represent characteristics that depend neither on the speaker nor on the session.</p>
 <p>Minimizing the global divergence <a href="#equation-beta_glob">(4)</a> subject to constraints <a href="#equation-cst_spk">(5)</a> and <a href="#equation-cst_ses">(6)</a> is equivalent to the following problem:</p>
 <div class="math" id="equation-cost">

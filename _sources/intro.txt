@@ -60,6 +60,12 @@ In order to better model speaker identity, we now consider the portion of :math:
 
 under nonnegative constraints.
 
+.. figure:: NMFutt.png
+	:align: center
+	:scale: 60 %
+
+	**Fig. 1** NMF on speaker utterances
+
 We define a global cost function which is the sum of all local divergences:
 
 .. math::
@@ -79,6 +85,12 @@ In order to take the session and speaker variabilities into account we propose t
 
 with :math:`K_{\mathrm{SPK}} + K_{\mathrm{SES}} + K_{\mathrm{RES}} = K` and where :math:`K_{\mathrm{SPK}}`, :math:`K_{\mathrm{SES}}` and :math:`K_{\mathrm{RES}}` are the number of components in the speaker-dependent bases, the session-dependent bases and the residual bases, respectively. 
 
+.. figure:: clssesres.png
+	:align: center
+	:scale: 60 %
+
+	**Fig. 2** Basis decomposition into :math:`\textbf{W}^{(cs)}_{\mathrm{SPK}}`, :math:`\textbf{W}^{(cs)}_{\mathrm{SES}}` and :math:`\textbf{W}^{(cs)}_{\mathrm{RES}}`
+
 The first target is to capture speaker variability. This is related to finding vectors for the speaker bases (:math:`\textbf{W}^{(cs)}_{\mathrm{SPK}}`) for each speaker :math:`c` that are as close as possible across all the sessions in which the speaker is present, leading to the constraint:
 
 .. math::
@@ -87,6 +99,12 @@ The first target is to capture speaker variability. This is related to finding v
 
 with :math:`\|.\|^2` the Euclidean distance and :math:`\alpha_1` is the similarity constraint on speaker-dependent bases.
 
+.. figure:: clscst.png
+	:align: center
+	:scale: 60 %
+
+	**Fig. 3** Speaker similarity constraint
+
 The second target is to capture session variability. This can be accounted for by finding vectors for the sessions bases (:math:`\textbf{W}^{(cs)}_{\mathrm{SES}}`) for each session :math:`s` that are as close as possible across all the speakers that speak in the session, leading to the constraint:
 
 .. math::
@@ -94,6 +112,12 @@ The second target is to capture session variability. This can be accounted for b
 	:label: cst_ses
 
 where :math:`\alpha_2` is the similarity constraint on session-dependent bases.
+
+.. figure:: sescst.png
+	:align: center
+	:scale: 60 %
+
+	**Fig. 3** Session similarity constraint
 
 The vectors composing the residual bases :math:`\textbf{W}^{(cs)}_{\mathrm{RES}}` are left unconstrained to represent characteristics that depend neither on the speaker nor on the session.
 
