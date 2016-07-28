@@ -1073,7 +1073,6 @@ class ClassBetaNMF(object):
                                     beta=self.beta.get_value(),
                                     n_iter=n_iter,
                                     fixed_factors=[1],
-                                    buff_size=buff_size,
                                     verbose=self.verbose,
                                     l_sparse=l_sparse,
                                     sparse_idx=sparse_idx)
