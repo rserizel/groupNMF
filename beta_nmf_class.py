@@ -1295,7 +1295,7 @@ def load(fname="factors.h5", updates="beta"):
                        verbose=1)
 
     nmf.iters['cls'] = f['/iters/cls'][:]
-    nmf.iters['cls_ind'] = f['/iters/cls_ind'][:]
+    nmf.iters['cls_ind'] = f['/iters/clsind'][:]
     if "H" in f:
         nmf.H.set_value(f['H'][:])
     if "W" in f:
