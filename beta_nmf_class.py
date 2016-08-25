@@ -1289,12 +1289,12 @@ def load(fname="factors.h5", updates="beta"):
     f = h5py.File(fname, 'r')
 
     nmf = ClassBetaNMF(n_components=f['n_components'][:],
-                       beta=f['beta'],
+                       beta=f['beta'][0],
                        NMF_updates="groupNMF",
                        verbose=1)
 
     nmf.iters['cls'] = f['/iters/cls'][:]
-    nmf.iters['cls_ind'] = f['/iters/clsind'][:]
+    nmf.iters['cls_ind'] = f['/iters/cls_ind'][:]
     if "H" in f:
         nmf.H.set_value(f['H'][:])
     if "W" in f:
