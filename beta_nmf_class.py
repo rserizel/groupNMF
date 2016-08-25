@@ -1289,7 +1289,7 @@ def load(fname="factors.h5", updates="beta"):
     f = h5py.File(fname, 'r')
 
     nmf = ClassBetaNMF(n_components=f['n_components'][:],
-                       beta=f['beta'][0],
+                       beta=f['beta'],
                        NMF_updates="groupNMF",
                        verbose=1)
 
