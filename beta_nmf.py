@@ -85,6 +85,8 @@ class BetaNMF(object):
         self.factors = [self.h, self.w]
         self.x = theano.shared(
           np.zeros((data_shape)).astype(theano.config.floatX), name="X")
+        self.eps = theano.shared(np.asarray(1e-10, theano.config.floatX),
+                                  name="eps")
 
         self.l_sparse = theano.shared(l_sparse, name="l_sparse")
         if self.l_sparse.get_value() > 0:
@@ -153,7 +155,8 @@ class BetaNMF(object):
                                                  self.w,
                                                  self.h,
                                                  self.beta,
-                                                 self.l_sparse)
+                                                 self.l_sparse,
+                                                 self.eps)
             else:
                 h_update = updates.beta_H_groupSparse(self.x,
                                                       self.w,
@@ -161,8 +164,13 @@ class BetaNMF(object):
                                                       self.beta,
                                                       self.l_sparse,
                                                       self.sparse_idx[0, ],
-                                                      self.sparse_idx[1, ])
-        w_update = updates.beta_W(self.x, self.w, self.h, self.beta)
+                                                      self.sparse_idx[1, ]
+                                                      self.eps)
+        w_update = updates.beta_W(self.x,
+                                  self.w,
+                                  self.h,
+                                  self.beta,
+                                  self.eps)
         self.train_h = theano.function(inputs=[],
                                        outputs=[],
                                        updates={self.h: h_update},

@@ -11,7 +11,7 @@ import theano
 from theano.ifelse import ifelse
 
 
-def beta_H(X, W, H, beta):
+def beta_H(X, W, H, beta, eps):
     """Update activation with beta divergence
 
     Parameters
@@ -31,13 +31,13 @@ def beta_H(X, W, H, beta):
     """
     up = ifelse(
       T.eq(beta, 2),
-      (T.dot(X, W)) / (T.dot(T.dot(H, W.T), W)),
+      (T.dot(X, W)) / (T.dot(T.dot(H, W.T), W) + eps),
       (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), W)) /
-      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W)))
+      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W)) + eps)
     return T.mul(H, up)
 
 
-def beta_H_Sparse(X, W, H, beta, l_sp):
+def beta_H_Sparse(X, W, H, beta, l_sp, eps):
     """Update activation with beta divergence
 
     Parameters
@@ -59,13 +59,13 @@ def beta_H_Sparse(X, W, H, beta, l_sp):
     """
     up = ifelse(
       T.eq(beta, 2),
-      (T.dot(X, W)) / (T.dot(T.dot(H, W.T), W) + l_sp),
+      (T.dot(X, W)) / (T.dot(T.dot(H, W.T), W) + l_sp + eps),
       (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), W)) /
-      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W) + l_sp))
+      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W) + l_sp + eps))
     return T.mul(H, up)
 
 
-def beta_H_groupSparse(X, W, H, beta, l_sp, start, stop):
+def beta_H_groupSparse(X, W, H, beta, l_sp, start, stop, eps):
     """Update activation with beta divergence
 
     Parameters
@@ -100,13 +100,13 @@ def beta_H_groupSparse(X, W, H, beta, l_sp, start, stop):
     cst = results[-1]
     up = ifelse(
       T.eq(beta, 2),
-      (T.dot(X, W)) / (T.dot(T.dot(H, W.T), W) + l_sp * cst),
+      (T.dot(X, W)) / (T.dot(T.dot(H, W.T), W) + l_sp * cst + eps),
       (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), W)) /
-      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W) + l_sp * cst))
+      (T.dot(T.power(T.dot(H, W.T), (beta-1)), W) + l_sp * cst + eps))
     return T.mul(H, up)
 
 
-def beta_W(X, W, H, beta):
+def beta_W(X, W, H, beta, eps):
     """Update bases with beta divergence
 
     Parameters
@@ -126,13 +126,13 @@ def beta_W(X, W, H, beta):
     """
     up = ifelse(
       T.eq(beta, 2),
-      (T.dot(X.T, H)) / (T.dot(T.dot(H, W.T).T, H)),
+      (T.dot(X.T, H)) / (T.dot(T.dot(H, W.T).T, H) + eps),
       (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, H)) /
-      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, H)))
+      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, H) + eps))
     return T.mul(W, up)
 
 
-def H_beta_sub(X, W, Wsub, H, Hsub, beta):
+def H_beta_sub(X, W, Wsub, H, Hsub, beta, eps):
     """Update group activation with beta divergence
 
     Parameters
@@ -156,13 +156,13 @@ def H_beta_sub(X, W, Wsub, H, Hsub, beta):
     """
     up = ifelse(
       T.eq(beta, 2),
-      (T.dot(X, Wsub)) / (T.dot(T.dot(H, W.T), Wsub)),
+      (T.dot(X, Wsub)) / (T.dot(T.dot(H, W.T), Wsub) + eps),
       (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X), Wsub)) /
-      (T.dot(T.power(T.dot(H, W.T), (beta-1)), Wsub)))
+      (T.dot(T.power(T.dot(H, W.T), (beta-1)), Wsub) + eps))
     return T.mul(Hsub, up)
 
 
-def W_beta_sub(X, W, Wsub, H, Hsub, beta):
+def W_beta_sub(X, W, Wsub, H, Hsub, beta, eps):
     """Update group activation with beta divergence
 
     Parameters
@@ -186,14 +186,15 @@ def W_beta_sub(X, W, Wsub, H, Hsub, beta):
     """
     up = ifelse(
       T.eq(beta, 2),
-      (T.dot(X.T, Hsub)) / (T.dot(T.dot(H, W.T).T, Hsub)),
+      (T.dot(X.T, Hsub)) / (T.dot(T.dot(H, W.T).T, Hsub) + eps),
       (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub)) /
-      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub)))
+      (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub) + eps))
     return T.mul(Wsub, up)
 
 
 def W_beta_sub_withcst(X, W, Wsub, H, Hsub, beta,
-                       sum_grp, lambda_grp, card_grp):
+                       sum_grp, lambda_grp, card_grp,
+                       eps):
     """Update group activation with beta divergence
     and similarity constraints [1]_.
 
@@ -219,15 +220,15 @@ def W_beta_sub_withcst(X, W, Wsub, H, Hsub, beta,
     up = ifelse(
       T.eq(beta, 2),
       (T.dot(X.T, Hsub) + lambda_grp * sum_grp) /
-      (T.dot(T.dot(H, W.T).T, Hsub) + lambda_grp * card_grp * Wsub),
+      (T.dot(T.dot(H, W.T).T, Hsub) + lambda_grp * card_grp * Wsub + eps),
       (T.dot(T.mul(T.power(T.dot(H, W.T), (beta - 2)), X).T, Hsub) +
        lambda_grp * sum_grp) /
       (T.dot(T.power(T.dot(H, W.T), (beta-1)).T, Hsub) +
-       lambda_grp * card_grp * Wsub))
+       lambda_grp * card_grp * Wsub + eps))
     return T.mul(Wsub, up)
 
 
-def group_H(X, W, H, beta, params):
+def group_H(X, W, H, beta, params, eps):
     """Group udpate for the activation with beta divergence.
 
     Parameters
@@ -258,15 +259,15 @@ def group_H(X, W, H, beta, params):
     start = params[0][3]
     stop = params[0][4]
     up_cls = H_beta_sub(X, W, W[:, 0:k_cls], H[start:stop, :],
-                        H[start:stop, 0:k_cls], beta)
+                        H[start:stop, 0:k_cls], beta, eps)
     up_ses = H_beta_sub(X, W, W[:, k_cls:k_ses+k_cls], H[start:stop, :],
-                        H[start:stop, k_cls:k_ses+k_cls], beta)
+                        H[start:stop, k_cls:k_ses+k_cls], beta, eps)
     up_res = H_beta_sub(X, W, W[:, k_ses+k_cls:], H[start:stop, :],
-                        H[start:stop, k_ses+k_cls:], beta)
+                        H[start:stop, k_ses+k_cls:], beta, eps)
     return T.concatenate((up_cls, up_ses, up_res), axis=1)
 
 
-def group_W(X, W, H, beta, params):
+def group_W(X, W, H, beta, params, eps):
     """Group udpate for the bases with beta divergence
     and similarity constraints [1]_.
 
@@ -321,33 +322,35 @@ def group_W(X, W, H, beta, params):
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, 0:k_cls]) + lambdas[0] * sum_cls) /
       (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, 0:k_cls]) +
-       lambdas[0] * cardSc * W[ind, :, 0:k_cls]))
+       lambdas[0] * cardSc * W[ind, :, 0:k_cls] + eps))
     up_cls_without_cst = W[ind, :, 0:k_cls]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, 0:k_cls])) /
-      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, 0:k_cls])))
+      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, 0:k_cls]) +
+        eps))
     up_ses_with_cst = W[ind, :, k_cls:k_ses+k_cls]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, k_cls:k_ses+k_cls]) + lambdas[1] * sum_ses) /
       (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T,
              H[:, k_cls:k_ses+k_cls]) +
-       lambdas[1] * cardCs * W[ind, :, k_cls:k_ses+k_cls]))
+       lambdas[1] * cardCs * W[ind, :, k_cls:k_ses+k_cls] + eps))
     up_ses_without_cst = W[ind, :, k_cls:k_ses+k_cls]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, k_cls:k_ses+k_cls])) /
       (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T,
-             H[:, k_cls:k_ses+k_cls])))
+             H[:, k_cls:k_ses+k_cls]) + eps))
 
     up_cls = ifelse(T.gt(cardSc, 0), up_cls_with_cst, up_cls_without_cst)
     up_ses = ifelse(T.gt(cardCs, 0), up_ses_with_cst, up_ses_without_cst)
     up_res = W[ind, :, k_ses+k_cls:]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, k_ses+k_cls:])) /
-      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, k_ses+k_cls:])))
+      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, k_ses+k_cls:]) +
+        eps))
     return T.concatenate((up_cls, up_ses, up_res), axis=1)
 
 
-def noise_W(X, W, Wn, H, beta, params):
+def noise_W(X, W, Wn, H, beta, params, eps):
     """Group udpate for the bases with beta divergence in the noise reference case.
     Only the one session case is considered here.
 
@@ -395,12 +398,13 @@ def noise_W(X, W, Wn, H, beta, params):
              H[:, 0:k_cls]) +
        lambdas[0] * sum_cls) /
       (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, 0:k_cls]) +
-       lambdas[0] * cardSc * W[ind, :, 0:k_cls]))
+       lambdas[0] * cardSc * W[ind, :, 0:k_cls] + eps))
 
     up_cls_without_cst = W[ind, :, 0:k_cls]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, 0:k_cls])) /
-      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, 0:k_cls])))
+      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, 0:k_cls]) +
+        eps))
 
     up_ses = W[ind, :, k_cls:k_ses+k_cls]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
@@ -408,18 +412,19 @@ def noise_W(X, W, Wn, H, beta, params):
        lambdas[1] * Wn) /
       (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T,
              H[:, k_cls:k_ses+k_cls]) +
-       lambdas[1] * W[ind, :, k_cls:k_ses+k_cls]))
+       lambdas[1] * W[ind, :, k_cls:k_ses+k_cls] + eps))
 
     up_cls = ifelse(T.gt(cardSc, 0), up_cls_with_cst, up_cls_without_cst)
     up_res = W[ind, :, k_ses+k_cls:]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, k_ses+k_cls:])) /
-      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, k_ses+k_cls:])))
+      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, k_ses+k_cls:]) +
+        eps))
 
     return T.concatenate((up_cls, up_ses, up_res), axis=1)
 
 
-def group_W_nosum(X, W, H, sum_cls, sum_ses, beta, params):
+def group_W_nosum(X, W, H, sum_cls, sum_ses, beta, params, eps):
     """Group udpate for the bases with beta divergence
     The contribution for the class similiraity constraint
     and the session similarity constraint are computed externally.
@@ -469,7 +474,7 @@ def group_W_nosum(X, W, H, sum_cls, sum_ses, beta, params):
              H[:, 0:k_cls]) +
        lambdas[0] * sum_cls) /
       (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, 0:k_cls]) +
-       lambdas[0] * cardSc * W[ind, :, 0:k_cls]))
+       lambdas[0] * cardSc * W[ind, :, 0:k_cls] + eps))
 
     up_ses = W[ind, :, k_cls:k_ses+k_cls]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
@@ -477,11 +482,12 @@ def group_W_nosum(X, W, H, sum_cls, sum_ses, beta, params):
        lambdas[1] * sum_ses) /
       (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T,
              H[:, k_cls:k_ses+k_cls]) +
-       lambdas[1] * cardCs * W[ind, :, k_cls:k_ses+k_cls]))
+       lambdas[1] * cardCs * W[ind, :, k_cls:k_ses+k_cls] + eps))
 
     up_res = W[ind, :, k_ses+k_cls:]*(
       (T.dot(T.mul(T.power(T.dot(H, W[ind].T), (beta - 2)), X).T,
              H[:, k_ses+k_cls:])) /
-      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, k_ses+k_cls:])))
+      (T.dot(T.power(T.dot(H, W[ind].T), (beta-1)).T, H[:, k_ses+k_cls:]) +
+        eps))
 
     return T.concatenate((up_cls, up_ses, up_res), axis=1)

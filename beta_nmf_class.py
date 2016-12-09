@@ -157,6 +157,8 @@ class ClassBetaNMF(object):
         self.H = theano.shared(fact_.astype(theano.config.floatX), name="H",
                                borrow=True, allow_downcast=True)
         self.factors = [self.H, self.W]
+        self.eps = theano.shared(np.asarray(1e-10, theano.config.floatX),
+                                  name="eps")
         if Wn is not None:
             self.Wn = Wn
         self.X_buff = theano.shared(
@@ -691,14 +693,16 @@ class ClassBetaNMF(object):
                 self.X_buff[tind[1]:tind[2], ],
                 self.W[tind[0]],
                 self.H[tind[3]:tind[4], ],
-                self.beta))
+                self.beta,
+                self.eps))
             W_update = T.set_subtensor(
               self.W[tind[0]],
               updates.beta_W(
                 self.X_buff[tind[1]:tind[2], ],
                 self.W[tind[0]],
                 self.H[tind[3]:tind[4], ],
-                self.beta))
+                self.beta
+                self.eps))
             self.trainH = theano.function(inputs=[tind],
                                           outputs=[],
                                           updates={self.H: H_update},
@@ -726,7 +730,8 @@ class ClassBetaNMF(object):
                     self.W[tind[0]],
                     self.H,
                     self.beta,
-                    tparams))
+                    tparams,
+                    self.eps))
                 W_update = T.set_subtensor(
                   self.W[tind[0]],
                   updates.group_W_nosum(
@@ -736,7 +741,8 @@ class ClassBetaNMF(object):
                     self.cls_sums[tind[5]],
                     self.ses_sums[tind[6]],
                     self.beta,
-                    tparams))
+                    tparams
+                    self.eps))
                 self.trainH = theano.function(
                   inputs=[tind, tcomp, tlambda, tcard],
                   outputs=[],
@@ -764,7 +770,8 @@ class ClassBetaNMF(object):
                     self.W[tind[0]],
                     self.H,
                     self.beta,
-                    tparams))
+                    tparams,
+                    self.eps))
                 W_update = T.set_subtensor(
                   self.W[tind[0]],
                   updates.group_W(
@@ -772,7 +779,8 @@ class ClassBetaNMF(object):
                     self.W,
                     self.H[tind[3]:tind[4], ],
                     self.beta,
-                    tparams))
+                    tparams,
+                    self.eps))
                 self.trainH = theano.function(
                   inputs=[tind, tcomp, tlambda, tSc, tCs, tcard],
                   outputs=[],
@@ -803,7 +811,8 @@ class ClassBetaNMF(object):
                 self.W[tind[0]],
                 self.H,
                 self.beta,
-                tparams))
+                tparams,
+                self.eps))
             W_update = T.set_subtensor(
               self.W[tind[0]],
               updates.noise_W(
@@ -812,7 +821,8 @@ class ClassBetaNMF(object):
                 self.Wn,
                 self.H[tind[3]:tind[4], ],
                 self.beta,
-                tparams))
+                tparams,
+                self.eps))
             self.trainH = theano.function(
               inputs=[tind, tcomp, tlambda, tSc, tCs, tcard],
               outputs=[],
