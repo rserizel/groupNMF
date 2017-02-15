@@ -701,7 +701,7 @@ class ClassBetaNMF(object):
                 self.X_buff[tind[1]:tind[2], ],
                 self.W[tind[0]],
                 self.H[tind[3]:tind[4], ],
-                self.beta
+                self.beta,
                 self.eps))
             self.trainH = theano.function(inputs=[tind],
                                           outputs=[],
