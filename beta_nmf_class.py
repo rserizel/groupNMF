@@ -741,7 +741,7 @@ class ClassBetaNMF(object):
                     self.cls_sums[tind[5]],
                     self.ses_sums[tind[6]],
                     self.beta,
-                    tparams
+                    tparams,
                     self.eps))
                 self.trainH = theano.function(
                   inputs=[tind, tcomp, tlambda, tcard],
