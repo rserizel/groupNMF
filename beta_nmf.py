@@ -86,7 +86,7 @@ class BetaNMF(object):
         self.x = theano.shared(
           np.zeros((data_shape)).astype(theano.config.floatX), name="X")
         self.eps = theano.shared(np.asarray(1e-10, theano.config.floatX),
-                                  name="eps")
+                                 name="eps")
 
         self.l_sparse = theano.shared(l_sparse, name="l_sparse")
         if self.l_sparse.get_value() > 0:
@@ -164,7 +164,7 @@ class BetaNMF(object):
                                                       self.beta,
                                                       self.l_sparse,
                                                       self.sparse_idx[0, ],
-                                                      self.sparse_idx[1, ]
+                                                      self.sparse_idx[1, ],
                                                       self.eps)
         w_update = updates.beta_W(self.x,
                                   self.w,
