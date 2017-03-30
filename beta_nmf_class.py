@@ -9,6 +9,11 @@ beta\_nmf\_class.py
   fit function and theano functions to compute updates and cost.
   The ClassBetaNMF class is used to perform group NMF with
   class and session similarity constraints [1]_ .
+  
+  Copyright 2014-2016 Romain Serizel
+
+  This software is distributed under the terms of the GNU Public License 
+  version 3 (http://www.gnu.org/licenses/gpl.txt)
 
   .. [#] R. Serizel, S. Essid, and G. Richard.
     “Group nonnegative matrix factorisation with speaker and session variability
