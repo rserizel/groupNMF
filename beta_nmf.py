@@ -153,7 +153,12 @@ class BetaNMF(object):
         """Compile the theano based update functions"""
         print "Standard rules for beta-divergence"
         if self.l_sparse.get_value() == 0:
-            h_update = updates.beta_H(self.x, self.w, self.h, self.beta)
+            h_update = updates.beta_H(
+              self.x,
+              self.w,
+              self.h,
+              self.beta,
+              self.eps)
         else:
             if self.sparse_idx is None:
                 h_update = updates.beta_H_Sparse(self.x,
