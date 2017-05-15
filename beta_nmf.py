@@ -93,13 +93,16 @@ class BetaNMF(object):
         self.eps = theano.shared(np.asarray(1e-10, theano.config.floatX),
                                  name="eps")
 
-        self.l_sparse = theano.shared(l_sparse, name="l_sparse")
+        self.l_sparse = theano.shared(
+          np.asarray(l_sparse, theano.config.floatX),
+          name="l_sparse")
         if self.l_sparse.get_value() > 0:
             if sparse_idx is None:
                 self.sparse_idx = None
             else:
                 self.sparse_idx = theano.shared(
-                    sparse_idx, name="sparse_idx")
+                  sparse_idx.astype(theano.config.floatX),
+                  name="sparse_idx")
         self.get_updates_functions()
         self.get_div_function()
 
